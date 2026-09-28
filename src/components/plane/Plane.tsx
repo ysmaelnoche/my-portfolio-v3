@@ -1,13 +1,14 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Portfolio } from '@/content/types';
 import { site } from '@/content/site';
 import { cameraForBounds, cameraForFrame } from './camera';
 import { BootLog, CommandBar, HelpDialog, LayersPanel, Minimap, TopBar } from './Chrome';
 import { commandHints, parseCommand, projectsUsing, resolveEnter, suggestions, type Action } from './commands';
-import { AboutFrame, ContactFrame, IntroFrame, ProjectFrame, StackFrame, type FrameState } from './Frames';
-import { boundsOf, centerOf, computeLayout, overlaps, withHeights, type Frame } from './layout';
+import { AboutFrame, ContactFrame, GroupFrame, IntroFrame, ProjectFrame, StackFrame, type FrameState } from './Frames';
+import { boundsOf, centerOf, computeLayout, frameOfProject, overlaps, withHeights, workItems, type Frame } from './layout';
 import {
   isNarrow,
   isReadView,
@@ -28,6 +29,8 @@ const BOOT_SETTLE_MS = 250;
 const FLY_MS = 1100;
 const FIT_MS = 900;
 const TOAST_MS = 2600;
+/** Set once the boot sequence has played, so coming back from a case study doesn't replay it. */
+const BOOTED_KEY = 'plane:booted';
 
 type Live = {
   onKey: (e: KeyboardEvent) => void;
@@ -44,6 +47,10 @@ export function Plane({ data }: { data: Portfolio }) {
   const ctx = useMemo(() => ({ ...data, frames }), [data, frames]);
   const hints = useMemo(() => commandHints(ctx), [ctx]);
   const n = frames.length;
+  const router = useRouter();
+  const byId = useMemo(() => new Map(frames.map((f) => [f.id, f])), [frames]);
+  const projectFrame = useMemo(() => frameOfProject(data), [data]);
+  const workNumber = useMemo(() => new Map(workItems(data).map((w, i) => [w.id, i + 1])), [data]);
 
   const theme = useTheme();
   const read = useReadView();
@@ -75,10 +82,12 @@ export function Plane({ data }: { data: Portfolio }) {
     cameraRefs;
 
   const highlight = hover ?? pinned;
-  const lit = useMemo(
+  /** Projects using the highlighted tool, and the frames that show them. */
+  const litProjects = useMemo(
     () => new Set(highlight ? projectsUsing(data, highlight).map((p) => p.id) : []),
     [data, highlight],
   );
+  const lit = useMemo(() => new Set([...litProjects].map((id) => projectFrame.get(id) ?? id)), [litProjects, projectFrame]);
   const booted = reduced || boot >= n;
   const shown = useMemo(() => new Set(frames.slice(0, booted ? n : boot).map((f) => f.id)), [frames, boot, booted, n]);
 
@@ -104,8 +113,8 @@ export function Plane({ data }: { data: Portfolio }) {
       return;
     }
     const el = worldRef.current?.querySelector<HTMLElement>(`[data-frame="${f.id}"]`);
-    const nominal = layout.frames[i];
-    const target = el ? withHeights([nominal], { [f.id]: el.offsetHeight })[0] : f;
+    const h = el?.offsetHeight || f.h;
+    const target = { ...f, y: f.anchor === 'bottom' ? f.y + f.h - h : f.y, h };
     camera.current.flyTo(cameraForFrame(target, camera.current.viewport(), isNarrow()), instant ? 0 : FLY_MS);
   };
 
@@ -130,6 +139,7 @@ export function Plane({ data }: { data: Portfolio }) {
 
   const copyEmail = async (): Promise<boolean> => {
     try {
+      if (!data.email) return false;
       await navigator.clipboard.writeText(data.email);
       return true;
     } catch {
@@ -171,6 +181,8 @@ export function Plane({ data }: { data: Portfolio }) {
         );
       case 'help':
         return setHelpOpen(true);
+      case 'navigate':
+        return router.push(a.href);
       case 'error':
         return showToast(a.message);
     }
@@ -273,8 +285,15 @@ export function Plane({ data }: { data: Portfolio }) {
       return Math.max(0, layout.frames.findIndex((f) => f.id === id));
     };
     const land = (instant: boolean) => live.current.flyTo(target(), { instant, updateHash: false });
-    if (prefersReducedMotion()) {
-      const r = requestAnimationFrame(() => land(true));
+    let seen = false;
+    try {
+      seen = sessionStorage.getItem(BOOTED_KEY) === '1';
+    } catch {}
+    if (prefersReducedMotion() || seen) {
+      const r = requestAnimationFrame(() => {
+        setBoot(layout.frames.length);
+        land(true);
+      });
       return () => cancelAnimationFrame(r);
     }
     let b = 0;
@@ -284,6 +303,9 @@ export function Plane({ data }: { data: Portfolio }) {
       setBoot(b);
       if (b >= layout.frames.length) {
         clearInterval(tick);
+        try {
+          sessionStorage.setItem(BOOTED_KEY, '1');
+        } catch {}
         settle = setTimeout(() => land(false), BOOT_SETTLE_MS);
       }
     }, BOOT_STEP_MS);
@@ -334,8 +356,8 @@ export function Plane({ data }: { data: Portfolio }) {
 
   // ---------------------------------------------------------------- render
   const activeFrame = frames[active] ?? frames[0];
-  const path =
-    activeFrame.id === 'intro' ? '' : activeFrame.kind === 'project' ? `work/${activeFrame.id}` : activeFrame.id;
+  const isWork = (f: Frame) => f.kind === 'project' || f.kind === 'group';
+  const path = activeFrame.id === 'intro' ? '' : isWork(activeFrame) ? `work/${activeFrame.id}` : activeFrame.id;
 
   const stateOf = (f: Frame): FrameState => {
     const isLit = lit.has(f.id);
@@ -343,7 +365,7 @@ export function Plane({ data }: { data: Portfolio }) {
       shown: shown.has(f.id),
       active: f.id === activeFrame.id,
       lit: isLit,
-      dim: !highlight ? null : f.kind === 'project' ? (isLit ? null : 'strong') : f.kind === 'stack' ? null : 'soft',
+      dim: !highlight ? null : isWork(f) ? (isLit ? null : 'strong') : f.kind === 'stack' ? null : 'soft',
     };
   };
 
@@ -360,8 +382,7 @@ export function Plane({ data }: { data: Portfolio }) {
     };
   });
 
-  const faded = new Set(frames.filter((f) => f.kind === 'project' && highlight && !lit.has(f.id)).map((f) => f.id));
-  const projectIndex = new Map(data.projects.map((p, i) => [p.id, i]));
+  const faded = new Set(frames.filter((f) => isWork(f) && highlight && !lit.has(f.id)).map((f) => f.id));
 
   const renderFrame = (f: Frame) => {
     const st = stateOf(f);
@@ -401,8 +422,31 @@ export function Plane({ data }: { data: Portfolio }) {
           />
         );
       case 'project': {
-        const i = projectIndex.get(f.id) ?? 0;
-        return <ProjectFrame key={f.id} frame={f} state={st} project={data.projects[i]} index={i} highlight={highlight} />;
+        const project = data.projects.find((p) => p.id === f.id)!;
+        return (
+          <ProjectFrame
+            key={f.id}
+            frame={f}
+            state={st}
+            project={project}
+            number={workNumber.get(f.id) ?? 0}
+            highlight={highlight}
+          />
+        );
+      }
+      case 'group': {
+        const group = data.groups!.find((g) => g.id === f.id)!;
+        return (
+          <GroupFrame
+            key={f.id}
+            frame={f}
+            state={st}
+            group={group}
+            projects={data.projects.filter((p) => p.group === f.id)}
+            number={workNumber.get(f.id) ?? 0}
+            lit={litProjects}
+          />
+        );
       }
     }
   };
@@ -441,7 +485,7 @@ export function Plane({ data }: { data: Portfolio }) {
               />
             ))}
           </div>
-          {layout.reading.map((nominal) => renderFrame(nominal))}
+          {layout.reading.map((nominal) => renderFrame(byId.get(nominal.id) ?? nominal))}
         </main>
       </div>
 

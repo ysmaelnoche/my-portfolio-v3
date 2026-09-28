@@ -16,10 +16,26 @@ describe('fuzzy', () => {
 
 describe('parseCommand', () => {
   it('opens frames by id, with or without `open`', () => {
-    expect(parseCommand('open atlas', ctx)).toEqual({ type: 'fly', index: indexOf('atlas') });
-    expect(parseCommand('  Open   ATLAS ', ctx)).toEqual({ type: 'fly', index: indexOf('atlas') });
+    expect(parseCommand('open orbit', ctx)).toEqual({ type: 'fly', index: indexOf('orbit') });
+    expect(parseCommand('  Open   ORBIT ', ctx)).toEqual({ type: 'fly', index: indexOf('orbit') });
     expect(parseCommand('contact', ctx)).toEqual({ type: 'fly', index: indexOf('contact') });
     expect(parseCommand('cd ~/about', ctx)).toEqual({ type: 'fly', index: indexOf('about') });
+  });
+
+  it('opens a grouped project by flying to its group frame', () => {
+    expect(parseCommand('open resume-harvesting', ctx)).toEqual({ type: 'fly', index: indexOf('comrise') });
+    expect(parseCommand('open comrise', ctx)).toEqual({ type: 'fly', index: indexOf('comrise') });
+  });
+
+  it('cats a case study', () => {
+    expect(parseCommand('cat network-dashboard', ctx)).toEqual({ type: 'navigate', href: '/work/network-dashboard' });
+    expect(parseCommand('cat leads-sync', ctx)).toEqual({ type: 'navigate', href: '/work/leads-sync' });
+    expect(parseCommand('cat nope', ctx).type).toBe('error');
+  });
+
+  it('refuses copy email while no email is published', () => {
+    expect(parseCommand('copy email', { ...ctx, email: '' }).type).toBe('error');
+    expect(parseCommand('copy email', { ...ctx, email: 'a@b.c' })).toEqual({ type: 'copy-email' });
   });
 
   it('reports unknown frames and commands', () => {
@@ -28,9 +44,9 @@ describe('parseCommand', () => {
   });
 
   it('greps tools exactly first, then by substring', () => {
-    expect(parseCommand('grep rust', ctx)).toEqual({ type: 'grep', tool: 'Rust', count: 2 });
-    expect(parseCommand('grep react', ctx)).toMatchObject({ tool: 'React' });
-    expect(parseCommand('grep nati', ctx)).toMatchObject({ tool: 'React Native', count: 1 });
+    expect(parseCommand('grep python', ctx)).toEqual({ type: 'grep', tool: 'Python', count: 2 });
+    expect(parseCommand('grep react', ctx)).toMatchObject({ tool: 'React', count: 3 });
+    expect(parseCommand('grep medallion', ctx)).toMatchObject({ tool: 'Medallion Architecture', count: 1 });
     expect(parseCommand('grep cobol', ctx)).toEqual({ type: 'error', message: 'grep: nothing matches "cobol"' });
   });
 
@@ -41,21 +57,20 @@ describe('parseCommand', () => {
     expect(parseCommand('invert', ctx)).toEqual({ type: 'theme' });
     expect(parseCommand('light', ctx)).toEqual({ type: 'theme', mode: 'light' });
     expect(parseCommand('read', ctx)).toEqual({ type: 'read' });
-    expect(parseCommand('copy email', ctx)).toEqual({ type: 'copy-email' });
   });
 });
 
 describe('suggestions', () => {
   it('shows the base commands when empty, with clear only while highlighting', () => {
     const idle = suggestions(ctx, '', { active: 0, highlight: null }).map((x) => x.c);
-    expect(idle.slice(0, 4)).toEqual(['tour', 'fit', 'open halcyon', 'grep rust']);
+    expect(idle.slice(0, 4)).toEqual(['tour', 'fit', 'open network-dashboard', 'grep python']);
     expect(idle).not.toContain('clear');
     expect(suggestions(ctx, '', { active: 0, highlight: 'Rust' }).map((x) => x.c)).toContain('clear');
   });
 
   it('ranks exact and prefix matches above fuzzy ones', () => {
-    const list = suggestions(ctx, 'rust', { active: 0, highlight: null }).map((x) => x.c);
-    expect(list[0]).toBe('grep rust');
+    const list = suggestions(ctx, 'python', { active: 0, highlight: null }).map((x) => x.c);
+    expect(list[0]).toBe('grep python');
     expect(suggestions(ctx, 'open about', { active: 0, highlight: null })[0].c).toBe('open about');
   });
 
@@ -84,12 +99,12 @@ describe('resolveEnter', () => {
 
 describe('commandHints', () => {
   it('uses the hints from the data when they are valid', () => {
-    expect(commandHints(ctx)).toEqual({ open: 'atlas', grep: 'rust', firstProject: 'halcyon' });
+    expect(commandHints(ctx)).toEqual({ open: 'orbit', grep: 'python', firstProject: 'network-dashboard' });
   });
 
   it('falls back to the data when hints are missing or stale', () => {
     const h = commandHints({ ...ctx, hints: { open: 'gone' } });
     expect(ctx.projects.map((p) => p.id)).toContain(h.open);
-    expect(h.grep).toBe('typescript');
+    expect(h.grep).toBe('google sheets');
   });
 });

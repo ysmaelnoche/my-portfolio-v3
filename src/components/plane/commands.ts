@@ -14,9 +14,10 @@ export type Action =
   | { type: 'read'; on?: boolean }
   | { type: 'copy-email' }
   | { type: 'help' }
+  | { type: 'navigate'; href: string }
   | { type: 'error'; message: string };
 
-type Ctx = Pick<Portfolio, 'projects' | 'skills' | 'email' | 'hints'> & { frames: Frame[] };
+type Ctx = Pick<Portfolio, 'projects' | 'skills' | 'email' | 'hints'> & Partial<Pick<Portfolio, 'groups'>> & { frames: Frame[] };
 
 /** True when every character of q appears in s, in order. */
 export function fuzzy(s: string, q: string) {
@@ -71,23 +72,27 @@ export function baseCommands(ctx: Ctx, opts: { highlight: string | null }): Sugg
   ];
   if (opts.highlight) list.push({ c: 'clear', d: `reset ${opts.highlight} highlight` });
   list.push(
+    { c: `cat ${h.firstProject}`, d: 'read a case study' },
     { c: 'read', d: 'toggle reading view  (r)' },
     { c: 'invert', d: 'toggle light / dark  (i)' },
-    { c: 'copy email', d: ctx.email },
-    { c: 'help', d: 'keyboard shortcuts  (?)' },
   );
+  if (ctx.email) list.push({ c: 'copy email', d: ctx.email });
+  list.push({ c: 'help', d: 'keyboard shortcuts  (?)' });
   return list;
 }
 
 export function suggestions(ctx: Ctx, query: string, opts: { active: number; highlight: string | null; limit?: number }) {
-  const limit = opts.limit ?? 8;
+  const limit = opts.limit ?? 9;
   const base = baseCommands(ctx, opts);
   const q = query.trim().toLowerCase();
   if (!q) return base.slice(0, limit);
+  const inFrame = new Set(ctx.frames.map((f) => f.id));
   const all: Suggestion[] = [
-    ...base.filter((x) => !x.c.startsWith('open ') && !x.c.startsWith('grep ')),
+    ...base.filter((x) => !/^(open|grep|cat) /.test(x.c)),
     { c: 'clear', d: 'reset highlight' },
     ...ctx.frames.map((f, i) => ({ c: `open ${f.id}`, d: i === opts.active ? 'current frame' : 'fly to frame' })),
+    ...ctx.projects.filter((p) => !inFrame.has(p.id)).map((p) => ({ c: `open ${p.id}`, d: `fly to ${p.group ?? 'frame'}` })),
+    ...ctx.projects.map((p) => ({ c: `cat ${p.id}`, d: `case study — ${p.name}` })),
     ...allTools(ctx).map((t) => {
       const n = projectsUsing(ctx, t).length;
       return { c: `grep ${t.toLowerCase()}`, d: `${n} project${n === 1 ? '' : 's'}` };
@@ -105,12 +110,25 @@ export function suggestions(ctx: Ctx, query: string, opts: { active: number; hig
 /** Turns a command string into an action. Unknown input becomes an `error` with a hint. */
 export function parseCommand(input: string, ctx: Ctx): Action {
   const c = input.trim().toLowerCase().replace(/\s+/g, ' ');
-  const frameIndex = (id: string) => ctx.frames.findIndex((f) => f.id === id);
+  const groups = new Set((ctx.groups ?? []).map((g) => g.id));
+  const frameIndex = (id: string) => {
+    const direct = ctx.frames.findIndex((f) => f.id === id);
+    if (direct >= 0) return direct;
+    // A project listed inside a group frame (e.g. an internship) flies to that frame.
+    const p = ctx.projects.find((x) => x.id === id);
+    return p?.group && groups.has(p.group) ? ctx.frames.findIndex((f) => f.id === p.group) : -1;
+  };
+  const cleanId = (s: string) => s.replace(/^~\/?|\/$/g, '').split('/').pop() ?? '';
 
   if (c.startsWith('open ') || c.startsWith('cd ')) {
-    const id = c.slice(c.indexOf(' ') + 1).replace(/^~\/?|\/$/g, '').split('/').pop() ?? '';
+    const id = cleanId(c.slice(c.indexOf(' ') + 1));
     const i = frameIndex(id);
     return i >= 0 ? { type: 'fly', index: i } : { type: 'error', message: `no frame named ${id}` };
+  }
+  if (c.startsWith('cat ') || c.startsWith('less ')) {
+    const id = cleanId(c.slice(c.indexOf(' ') + 1));
+    const p = ctx.projects.find((x) => x.id === id);
+    return p ? { type: 'navigate', href: `/work/${p.id}` } : { type: 'error', message: `cat: ${id}: no such case study` };
   }
   if (c.startsWith('grep ')) {
     const term = c.slice(5).trim();
@@ -146,7 +164,7 @@ export function parseCommand(input: string, ctx: Ctx): Action {
       return { type: 'read', on: false };
     case 'copy email':
     case 'email':
-      return { type: 'copy-email' };
+      return ctx.email ? { type: 'copy-email' } : { type: 'error', message: 'no public email yet — see contact' };
     case 'help':
     case '?':
       return { type: 'help' };

@@ -1,5 +1,9 @@
+/** Use exactly these so status reads the same everywhere. */
+export type ProjectStatus = 'Implemented' | 'Ongoing' | 'In development' | 'Planned' | 'Conceptual';
+
 export type ProjectFact = {
   label: string;
+  /** Keep short (it's shown large). Only confirmed facts — no invented numbers. */
   value: string;
 };
 
@@ -8,23 +12,67 @@ export type ProjectLink = {
   href: string;
 };
 
+/** Drawn in the card's picture area and at the top of the case study. */
+export type ProjectVisual =
+  | {
+      type: 'flow';
+      steps: string[];
+      /** Steps that don't exist yet; drawn dashed and marked "planned". */
+      planned?: string[];
+    }
+  | {
+      type: 'quadrant';
+      /** Axis names, e.g. x: 'Cost', y: 'Productivity'. */
+      x: string;
+      y: string;
+    };
+
+export type CaseSection = {
+  title: string;
+  body?: string[];
+  items?: string[];
+  /** Rendered as a step-by-step flow, e.g. Lead received → Assigned → … */
+  flow?: string[];
+};
+
 export type Project = {
-  /** URL-safe slug. Used for deep links (/#halcyon) and commands (`open halcyon`). */
+  /** URL-safe slug: /work/<id>, /#<id>, `open <id>`. */
   id: string;
   name: string;
-  year: string;
-  /** One-line description of what it is, e.g. "GPU charting library". */
+  status: ProjectStatus;
+  /** Optional qualifier shown after the status, e.g. "continuing development". */
+  statusNote?: string;
+  year?: string;
+  /** Where it was built, e.g. "Data & AI · TVS Philippines" or "Personal project". */
+  context: string;
+  /** Area, e.g. "Data Engineering / Business Intelligence". */
   kind: string;
-  role: string;
-  status: string;
+  role?: string;
+  /** One or two sentences for the card. */
+  summary: string;
   /** Tools used. Names should match entries in `skills` so `grep` can find them. */
   stack: string[];
-  description: string;
   facts: ProjectFact[];
-  /** Optional screenshot in /public, e.g. { src: '/work/halcyon.png', alt: '…' }. 4:3 works best. */
+  visual?: ProjectVisual;
+  /** Case study body: Problem, Solution, Outcome, Future direction… */
+  sections: CaseSection[];
+  /** When set, the project is listed inside that group's frame instead of getting its own. */
+  group?: string;
+  /** Optional screenshot in /public, e.g. { src: '/work/orbit.png', alt: '…' }. 4:3 works best. */
   image?: { src: string; alt: string };
-  /** Optional outbound links shown on the card, e.g. live site and source. */
   links?: ProjectLink[];
+};
+
+/** A frame that lists several smaller projects, e.g. an internship. */
+export type ProjectGroup = {
+  id: string;
+  title: string;
+  role: string;
+  org: string;
+  period: string;
+  summary: string;
+  facts: ProjectFact[];
+  stack: string[];
 };
 
 export type SkillGroup = {
@@ -36,6 +84,7 @@ export type TimelineEntry = {
   years: string;
   role: string;
   org: string;
+  note?: string;
 };
 
 export type ProfileLink = {
@@ -45,18 +94,25 @@ export type ProfileLink = {
 };
 
 export type Portfolio = {
+  /** Display name. */
   name: string;
+  /** Legal/full name, used in structured data for search engines. */
+  fullName?: string;
   /** Short handle used in the terminal-style paths, e.g. "ysmael" → ~/ysmael. */
   handle: string;
   role: string;
   location: string;
-  email: string;
+  /** Leave empty to hide the email row until you're ready to publish one. */
+  email?: string;
   /** Hero sentence on the intro frame; also the default SEO description. */
   intro: string;
   bio: string[];
+  /** How you work, drawn as a flow on the about frame. */
+  approach?: string[];
   /** Small line above "Say hello." on the contact frame. */
   availability: string;
   projects: Project[];
+  groups?: ProjectGroup[];
   skills: SkillGroup[];
   timeline: TimelineEntry[];
   links: ProfileLink[];

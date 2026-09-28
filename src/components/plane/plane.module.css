@@ -242,6 +242,52 @@
   color: var(--text-muted);
 }
 
+.timelineNote {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.approach {
+  margin: 26px 0 22px;
+}
+
+.card .approachTitle {
+  margin-bottom: 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.card .approachList {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.approachList li {
+  display: flex;
+  align-items: center;
+}
+
+.approachStep {
+  padding: 4px 8px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  color: var(--text-list);
+}
+
+.approachArrow {
+  padding: 0 6px;
+  color: var(--text-dim);
+}
+
 /* project */
 
 .projectCard {
@@ -363,6 +409,59 @@
   font-size: 12px;
 }
 
+.card .groupListTitle {
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.groupList li {
+  border-top: 1px solid var(--line);
+  transition: opacity 0.3s;
+}
+
+.groupList li[data-dim] {
+  opacity: 0.3;
+}
+
+.groupItem {
+  display: grid;
+  gap: 2px;
+  padding: 11px 0;
+}
+
+.groupItemHead {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+}
+
+.groupList li[data-lit] .groupItemName {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.groupItem:hover .groupItemName {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.groupItemKind {
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.groupItemFact {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-soft);
+}
+
 .projectLinks a:hover {
   color: var(--fg-strong);
   text-decoration: underline;
@@ -373,7 +472,7 @@
 
 .stackCard {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr));
   gap: 24px;
   padding: 32px;
 }
@@ -467,6 +566,11 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin-top: 20px;
+}
+
+.card .contactLinks[data-bordered] {
+  padding-top: 16px;
+  border-top: 1px solid var(--text-bio);
 }
 
 .contactLinks a {

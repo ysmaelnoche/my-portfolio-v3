@@ -1,0 +1,189 @@
+/* ------------------------------------------------------------------ flow */
+
+.flow {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 14px 20px;
+  list-style: none;
+  font-family: var(--font-mono);
+  gap: 14px;
+}
+
+.flow[data-count='6'],
+.flow[data-count='7'] {
+  gap: 10px;
+}
+
+.flow[data-count='8'],
+.flow[data-count='9'] {
+  gap: 6px;
+}
+
+.step {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: min(240px, 100%);
+  padding: 4px 10px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  background: var(--surface);
+  font-size: 11px;
+  color: var(--text-list);
+  white-space: nowrap;
+}
+
+/* connector to the previous step */
+.step + .step::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  height: 14px;
+  border-left: 1px solid var(--line-strong);
+}
+
+.flow[data-count='6'] .step + .step::before,
+.flow[data-count='7'] .step + .step::before {
+  height: 10px;
+}
+
+.flow[data-count='8'] .step + .step::before,
+.flow[data-count='9'] .step + .step::before {
+  height: 6px;
+}
+
+.step[data-last] {
+  border-color: var(--fg);
+  color: var(--fg);
+}
+
+.step[data-planned] {
+  border-style: dashed;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.step[data-planned]::before {
+  border-left-style: dashed !important;
+}
+
+.idx {
+  color: var(--text-dim);
+  font-size: 10px;
+}
+
+.label {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+}
+
+/* ---------------------------------------------------------- inline flow */
+
+.inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 0;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.inline li {
+  display: flex;
+  align-items: center;
+}
+
+.inlineStep {
+  padding: 5px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  color: var(--text-list);
+}
+
+.inlineStep[data-planned] {
+  border-style: dashed;
+  color: var(--text-muted);
+}
+
+.arrow {
+  padding: 0 8px;
+  color: var(--text-dim);
+}
+
+/* ------------------------------------------------------------- quadrant */
+
+.quadrant {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  gap: 8px;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 16px 18px 12px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.axisY {
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  justify-self: center;
+  align-self: center;
+}
+
+.axisX {
+  grid-column: 2;
+  justify-self: center;
+}
+
+.cells {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.cell {
+  display: grid;
+  place-items: center;
+  padding: 8px;
+  text-align: center;
+  color: var(--text-list);
+  line-height: 1.5;
+}
+
+.cell:nth-child(1),
+.cell:nth-child(2) {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.cell:nth-child(odd) {
+  border-right: 1px solid var(--line-strong);
+}
+
+.quadrant[data-size='page'] {
+  height: 280px;
+  padding: 0;
+  font-size: 11px;
+}

@@ -18,7 +18,7 @@ describe('camera', () => {
   });
 
   it('frames a frame at no more than 115%', () => {
-    const c = cameraForFrame({ id: 'a', kind: 'intro', x: -300, y: -220, w: 600, h: 440, anchor: 'top' }, vp, false);
+    const c = cameraForFrame({ id: 'a', kind: 'intro', x: -300, y: -220, w: 600, h: 440, nh: 440, anchor: 'top' }, vp, false);
     expect(c.z).toBe(1.15);
     expect(c.x).toBe(0);
   });
