@@ -18,6 +18,12 @@ export const portfolio: Portfolio = {
   location: 'Philippines · GMT+8',
   email: 'ysmaelnoche02@gmail.com',
   phone: '+63 969 049 3331',
+  portrait: {
+    dither: '/portrait/dither.png',
+    ink: '/portrait/dither-ink.png',
+    photo: '/portrait/gray.jpg',
+    alt: 'Portrait of Ysmael Noche in a dark suit and tie, smiling',
+  },
   intro:
     'I start with the business problem, then the process and the data behind it — and build what solves it: data pipelines, dashboards, automations and internal tools.',
   bio: [

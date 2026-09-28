@@ -1352,3 +1352,129 @@
     gap: 2px;
   }
 }
+
+/* ---------------------------------------------------------------- portrait */
+
+@property --lr {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+
+.card .portrait {
+  position: relative;
+  margin: 0 0 28px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  cursor: crosshair;
+  touch-action: none;
+  --lx: 50%;
+  --ly: 40%;
+  --lr: 0px;
+  transition: --lr 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.portrait[data-lens] {
+  --lr: 64px;
+}
+
+.portraitDither,
+.portraitPhoto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
+.portraitDither {
+  image-rendering: pixelated;
+}
+
+/* Each theme shows its own version: light dots on dark, or dark ink on light (never a negative). */
+.portraitLight {
+  display: none;
+}
+
+:global(html[data-theme='light']) .portraitLight {
+  display: block;
+}
+
+:global(html[data-theme='light']) .portraitDark {
+  display: none;
+}
+
+/* In the reading view the page must still scroll when a finger starts on the photo. */
+:global(html[data-view='read']) .portrait,
+:global(html.no-js) .portrait {
+  touch-action: pan-y;
+}
+
+/* The lens: the grayscale photo shows through a circle that follows the pointer.
+   Only the radius animates (open/close); the position tracks the pointer directly. */
+.portraitPhoto {
+  clip-path: circle(var(--lr) at var(--lx) var(--ly));
+}
+
+.portraitScan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--fg);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.portraitCaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-muted);
+  background: linear-gradient(transparent, var(--bg));
+  pointer-events: none;
+}
+
+/* Scan in line by line when the frame appears, like the boot's "mount … ok". */
+.frame[data-shown] .portraitDither {
+  animation: portraitIn 1.4s steps(45) 0.35s both;
+}
+
+.frame[data-shown] .portraitScan {
+  animation: portraitScan 1.4s steps(45) 0.35s both;
+}
+
+@keyframes portraitIn {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes portraitScan {
+  0% {
+    top: 0;
+    opacity: 1;
+  }
+  97% {
+    top: calc(100% - 2px);
+    opacity: 1;
+  }
+  100% {
+    top: calc(100% - 2px);
+    opacity: 0;
+  }
+}

@@ -108,6 +108,12 @@ export type Portfolio = {
   email?: string;
   /** Optional phone in international format, e.g. '+63 969 049 3331'. Shown as a tap-to-call link. */
   phone?: string;
+  /**
+   * Optional portrait on the about frame: a 1-bit dither (light dots on transparent, square;
+   * `ink` is the same dither as dark dots for the light theme)
+   * that scans in, and a grayscale photo revealed by a lens on hover or touch.
+   */
+  portrait?: { dither: string; ink: string; photo: string; alt: string };
   /** Hero sentence on the intro frame; also the default SEO description. */
   intro: string;
   bio: string[];

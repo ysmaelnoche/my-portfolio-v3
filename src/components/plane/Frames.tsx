@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { isExternal, statusLabel, telHref } from '@/content/format';
 import type { Portfolio, Project, ProjectGroup } from '@/content/types';
 import { Visual } from '@/components/visuals/Visual';
+import { Portrait } from './Portrait';
 import { coordLabel, stackColumns, type Frame } from './layout';
 import s from './plane.module.css';
 
@@ -109,6 +110,7 @@ export function AboutFrame({ frame, state, data }: { frame: Frame; state: FrameS
         <h2 id="about-title" className="sr-only">
           About
         </h2>
+        {data.portrait && <Portrait {...data.portrait} />}
         {data.bio.map((b, i) => (
           <p key={i} className={s.bio}>
             {b}
