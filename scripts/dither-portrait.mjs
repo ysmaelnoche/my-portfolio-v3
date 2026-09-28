@@ -17,7 +17,7 @@ const res = await p.evaluate(
     await img.decode();
     const cw = img.width,
       ch = cw,
-      cy = 40; // square crop: head and shoulders
+      cy = Math.round(img.height * 0.01); // square crop from the top: head and shoulders
     const mk = (w, h) => Object.assign(document.createElement('canvas'), { width: w, height: h });
 
     // mask: keep the head and torso, fade the background out
@@ -29,6 +29,11 @@ const res = await p.evaluate(
       return Math.max(0, Math.min(1, m / 0.22));
     };
 
+    // If the photo already has a transparent background, its alpha is the outline.
+    const probe = mk(64, 64).getContext('2d');
+    probe.drawImage(img, 0, 0, 64, 64);
+    const hasAlpha = probe.getImageData(0, 0, 64, 64).data.some((v, i) => i % 4 === 3 && v < 250);
+
     // smooth grayscale for the lens
     const gw = 480,
       g = mk(gw, gw),
@@ -36,7 +41,7 @@ const res = await p.evaluate(
     gx.filter = 'grayscale(1) contrast(1.05)';
     gx.drawImage(img, 0, cy, cw, ch, 0, 0, gw, gw);
     const gd = gx.getImageData(0, 0, gw, gw);
-    for (let i = 0; i < gw * gw; i++) gd.data[i * 4 + 3] = 255 * mask((i % gw) / gw, Math.floor(i / gw) / gw);
+    if (!hasAlpha) for (let i = 0; i < gw * gw; i++) gd.data[i * 4 + 3] = 255 * mask((i % gw) / gw, Math.floor(i / gw) / gw);
     gx.putImageData(gd, 0, 0);
     const gray = g.toDataURL('image/webp', 0.8);
 
@@ -56,9 +61,11 @@ const res = await p.evaluate(
       v = Math.max(0, Math.min(1, (v - 0.5) * 1.12 + 0.52));
       const t = (B[(y % 4) * 4 + (x % 4)] + 0.5) / 16;
       const q = Math.min(LV, Math.floor(v * LV + t)) / LV;
-      const c = Math.round(18 + q * (240 - 18));
+      const c = Math.round(44 + q * (240 - 44)); // darkest tone stays visible on the dark theme
       // the edge dissolves pixel by pixel through the same Bayer pattern (stays crisp, no halo)
-      const a = mask(x / w, y / w) > 1 - (B[((y + 2) % 4) * 4 + ((x + 1) % 4)] + 0.5) / 16 ? 255 : 0;
+      const a = hasAlpha
+        ? px.data[i * 4 + 3] > 128 ? 255 : 0 // crisp pixel outline from the cut-out
+        : mask(x / w, y / w) > 1 - (B[((y + 2) % 4) * 4 + ((x + 1) % 4)] + 0.5) / 16 ? 255 : 0;
       px.data.set([c, c, c, a], i * 4);
     }
     dx.putImageData(px, 0, 0);
