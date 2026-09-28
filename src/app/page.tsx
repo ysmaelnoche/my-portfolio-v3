@@ -13,6 +13,7 @@ function personJsonLd() {
     description: portfolio.intro,
     ...(portfolio.email ? { email: `mailto:${portfolio.email}` } : {}),
     url: siteUrl(),
+    ...(portfolio.school ? { alumniOf: { '@type': 'CollegeOrUniversity', name: portfolio.school } } : {}),
     knowsAbout: portfolio.skills.flatMap((g) => g.items),
     ...(sameAs.length ? { sameAs } : {}),
   };

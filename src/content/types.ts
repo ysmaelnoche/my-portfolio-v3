@@ -101,6 +101,8 @@ export type Portfolio = {
   /** Short handle used in the terminal-style paths, e.g. "ysmael" → ~/ysmael. */
   handle: string;
   role: string;
+  /** Alma mater, used in structured data for search engines. */
+  school?: string;
   location: string;
   /** Leave empty to hide the email row until you're ready to publish one. */
   email?: string;

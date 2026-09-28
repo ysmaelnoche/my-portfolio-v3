@@ -14,6 +14,7 @@ export const portfolio: Portfolio = {
   fullName: 'Flourdfiel Ysmael B. Noche',
   handle: 'ysmael',
   role: 'Junior Data Engineer',
+  school: 'Lyceum of Alabang',
   location: 'Philippines · GMT+8',
   // TODO: add the address you want public. The email row and `copy email` stay hidden while this is empty.
   email: '',
@@ -640,7 +641,7 @@ export const portfolio: Portfolio = {
       id: 'workflow-system',
       name: 'Workflow Process Management System',
       status: 'Implemented',
-      context: 'Capstone project · B.S. Information Technology',
+      context: 'Capstone project · Lyceum of Alabang',
       kind: 'Enterprise application / Workflow automation',
       role: 'Lead developer',
       summary:
@@ -721,12 +722,11 @@ export const portfolio: Portfolio = {
   ],
   timeline: [
     { years: 'Jul 2026 — Now', role: 'Junior Data Engineer', org: 'Data & AI, Philippines' },
-    // TODO: add the school name to `org`.
     {
       years: 'May 2026',
       role: 'B.S. Information Technology',
-      org: 'Graduated',
-      note: 'Lead developer, capstone project',
+      org: 'Lyceum of Alabang',
+      note: 'Graduated · lead developer, capstone project',
     },
     {
       years: 'Feb — May 2026',
@@ -737,7 +737,8 @@ export const portfolio: Portfolio = {
   ],
   links: [
     { label: 'GitHub', handle: '@ysmaelnoche', href: 'https://github.com/ysmaelnoche' },
-    // TODO: LinkedIn, résumé (put the PDF in /public and link '/resume.pdf').
+    { label: 'LinkedIn', handle: 'in/ysmaelnoche', href: 'https://www.linkedin.com/in/ysmaelnoche' },
+    // TODO: résumé (put the PDF in /public and link '/resume.pdf').
   ],
   hints: { open: 'orbit', grep: 'python' },
 };
