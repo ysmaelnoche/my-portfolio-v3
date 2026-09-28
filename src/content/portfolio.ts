@@ -16,8 +16,7 @@ export const portfolio: Portfolio = {
   role: 'Junior Data Engineer',
   school: 'Lyceum of Alabang',
   location: 'Philippines · GMT+8',
-  // TODO: add the address you want public. The email row and `copy email` stay hidden while this is empty.
-  email: '',
+  email: 'ysmaelnoche02@gmail.com',
   intro:
     'I start with the business problem, then the process and the data behind it — and build what solves it: data pipelines, dashboards, automations and internal tools.',
   bio: [
