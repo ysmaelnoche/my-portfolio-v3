@@ -1,0 +1,127 @@
+:root {
+  color-scheme: dark;
+  --font-sans: var(--font-geist-sans), system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+  /* Plane palette (dark). Values come straight from the design. */
+  --bg: #0a0a0a;
+  --fg: #ededed;
+  --fg-strong: #ffffff;
+  --surface: #0f0f0f;
+  --surface-raised: #111111;
+  --surface-sunken: #0c0c0c;
+  --surface-hover: #1a1a1a;
+  --surface-selected: #1f1f1f;
+  --line: #1c1c1c;
+  --line-frame: #1f1f1f;
+  --line-strong: #262626;
+  --line-faint: #161616;
+  --stripe: #171717;
+  --dot: #2a2a2a;
+  --text-faint: #3a3a3a;
+  --text-dim: #4a4a4a;
+  --text-quiet: #5a5a5a;
+  --text-muted: #808080;
+  --text-soft: #8a8a8a;
+  --text-mid: #9a9a9a;
+  --text-body: #a3a3a3;
+  --text-list: #bdbdbd;
+  --text-bio: #cfcfcf;
+  --ink-muted: #6b6b6b;
+  --backdrop: rgba(10, 10, 10, 0.85);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.6);
+}
+
+/* Light is the exact inverse of dark, matching the design's `invert` command. */
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #f5f5f5;
+  --fg: #121212;
+  --fg-strong: #000000;
+  --surface: #f0f0f0;
+  --surface-raised: #eeeeee;
+  --surface-sunken: #f3f3f3;
+  --surface-hover: #e5e5e5;
+  --surface-selected: #e0e0e0;
+  --line: #e3e3e3;
+  --line-frame: #e0e0e0;
+  --line-strong: #d9d9d9;
+  --line-faint: #e9e9e9;
+  --stripe: #e8e8e8;
+  --dot: #d5d5d5;
+  --text-faint: #c5c5c5;
+  --text-dim: #b5b5b5;
+  --text-quiet: #a5a5a5;
+  --text-muted: #6a6a6a;
+  --text-soft: #666666;
+  --text-mid: #656565;
+  --text-body: #5c5c5c;
+  --text-list: #424242;
+  --text-bio: #303030;
+  --ink-muted: #949494;
+  --backdrop: rgba(245, 245, 245, 0.85);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.12);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+::selection {
+  background: var(--fg);
+  color: var(--bg);
+}
+
+input::placeholder {
+  color: var(--text-dim);
+}
+
+:focus-visible {
+  outline: 2px solid var(--fg);
+  outline-offset: 2px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
