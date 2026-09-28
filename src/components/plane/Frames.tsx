@@ -378,6 +378,8 @@ export function ContactFrame({
   copied: boolean;
   onCopy: () => void;
 }) {
+  // Placeholder links ('#' or empty) stay hidden until they point somewhere.
+  const links = data.links.filter((l) => l.href && l.href !== '#');
   return (
     <Shell frame={frame} path={`~/${data.handle}/contact`} state={state} labelledBy="contact-title">
       <div className={`${s.card} ${s.contactCard}`} data-card="contact">
@@ -395,9 +397,9 @@ export function ContactFrame({
             </button>
           </div>
         )}
-        {data.links.length > 0 && (
+        {links.length > 0 && (
           <ul className={s.contactLinks} data-bordered={!data.email || undefined}>
-            {data.links.map((k) => (
+            {links.map((k) => (
               <li key={k.label}>
                 <a href={k.href} {...(isExternal(k.href) ? { target: '_blank', rel: 'noreferrer' } : {})}>
                   <span className={s.contactLinkLabel}>{k.label} ↗</span>

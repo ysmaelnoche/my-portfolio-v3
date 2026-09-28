@@ -1,10 +1,27 @@
 'use client';
 
-import { useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
+import {
+  useEffect,
+  useRef,
+  type MouseEvent as ReactMouseEvent,
+  type PointerEvent as ReactPointerEvent,
+  type RefObject,
+} from 'react';
 import type { Suggestion } from './commands';
 import type { Bounds, Frame } from './layout';
 import { MINIMAP, minimapScale } from './useCamera';
 import s from './plane.module.css';
+
+/**
+ * Mouse/touch clicks shouldn't leave a focus ring behind once the keyboard
+ * shortcuts move the selection elsewhere; keyboard activation keeps focus.
+ */
+function blurAfter(fn: () => void) {
+  return (e: ReactMouseEvent<HTMLButtonElement>) => {
+    fn();
+    if (e.detail > 0) e.currentTarget.blur();
+  };
+}
 
 export function TopBar({
   monogram,
@@ -41,19 +58,16 @@ export function TopBar({
         ~/{handle}/<span className={s.topPathActive}>{path}</span>
       </div>
       <div className={s.topRight}>
-        <span ref={coordRef} className={s.coords} aria-hidden="true">
-          x 0 · y 0
-        </span>
-        <span ref={zoomRef} className={s.zoom} aria-hidden="true">
-          100%
-        </span>
-        <button type="button" className={s.topBtn} onClick={onToggleRead} aria-pressed={read}>
+        {/* Filled in by the camera; empty until it knows where it is. */}
+        <span ref={coordRef} className={s.coords} aria-hidden="true" />
+        <span ref={zoomRef} className={s.zoom} aria-hidden="true" />
+        <button type="button" className={s.topBtn} onClick={blurAfter(onToggleRead)} aria-pressed={read}>
           {read ? 'plane' : 'read'}
         </button>
         <button
           type="button"
           className={s.topBtn}
-          onClick={onToggleTheme}
+          onClick={blurAfter(onToggleTheme)}
           aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
         >
           <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" className={s.themeIcon} data-light={theme === 'light' || undefined}>
@@ -61,7 +75,7 @@ export function TopBar({
             <path d="M8 1.75a6.25 6.25 0 0 1 0 12.5z" fill="currentColor" />
           </svg>
         </button>
-        <button type="button" className={s.topBtn} onClick={onHelp} aria-label="Keyboard shortcuts" aria-haspopup="dialog">
+        <button type="button" className={s.topBtn} onClick={blurAfter(onHelp)} aria-label="Keyboard shortcuts" aria-haspopup="dialog">
           ?
         </button>
       </div>
@@ -107,7 +121,7 @@ export function LayersPanel({
               data-active={i === active || undefined}
               data-faded={faded.has(f.id) || undefined}
               aria-current={i === active ? 'true' : undefined}
-              onClick={() => onGo(i)}
+              onClick={blurAfter(() => onGo(i))}
             >
               <span className={s.layerLabel}>{f.id}</span>
               <span className={s.layerKey} aria-hidden="true">
@@ -276,13 +290,13 @@ export function CommandBar({
             onBlur={() => onFocusChange(false)}
           />
         </label>
-        <button type="button" className={s.navBtn} onClick={onPrev} aria-label="Previous frame">
+        <button type="button" className={s.navBtn} onClick={blurAfter(onPrev)} aria-label="Previous frame">
           ←
         </button>
         <span className={s.counter} aria-hidden="true">
           {pad(position)}/{pad(total)}
         </span>
-        <button type="button" className={`${s.navBtn} ${s.navBtnPrimary}`} onClick={onNext} aria-label="Next frame">
+        <button type="button" className={`${s.navBtn} ${s.navBtnPrimary}`} onClick={blurAfter(onNext)} aria-label="Next frame">
           →
         </button>
       </div>

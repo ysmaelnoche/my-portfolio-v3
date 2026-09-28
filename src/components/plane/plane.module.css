@@ -47,6 +47,8 @@
 .grid {
   position: absolute;
   inset: 0;
+  /* Shown by the camera once it knows the zoom, so the first paint isn't a 100% grid. */
+  opacity: 0;
   pointer-events: none;
   background-image: radial-gradient(circle, var(--dot) 1px, transparent 1.3px);
   background-size: 24px 24px;
@@ -1090,16 +1092,30 @@
 /* ------------------------------------------------------------ reading view */
 /* Same DOM, reflowed into one scrolling column. Also the no-JavaScript layout. */
 
+:global(html[data-view='read']) .root,
+:global(html.no-js) .root {
+  position: static;
+  overflow: visible;
+  min-height: 100%;
+}
+
+/* The page itself scrolls in the reading view, so keyboard scrolling, find-in-page and scroll restoration work. */
 :global(html[data-view='read']) .viewport,
 :global(html.no-js) .viewport {
-  overflow-x: hidden;
-  overflow-y: auto;
+  position: static;
+  overflow: visible;
   cursor: auto;
   touch-action: auto;
   user-select: text;
   -webkit-user-select: text;
   overscroll-behavior: auto;
-  scroll-padding-top: 72px;
+}
+
+:global(html[data-view='read']) .topbar,
+:global(html[data-view='read']) .cmd,
+:global(html[data-view='read']) .layers,
+:global(html.no-js) .topbar {
+  position: fixed;
 }
 
 :global(html[data-view='read']) .grid,

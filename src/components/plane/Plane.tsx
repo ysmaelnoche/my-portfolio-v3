@@ -65,6 +65,8 @@ export function Plane({ data }: { data: Portfolio }) {
   const [query, setQuery] = useState('');
   const [focused, setFocused] = useState(false);
   const [sel, setSel] = useState(0);
+  /** True once the user chose a suggestion with the arrow keys (then Enter runs it over the typed text). */
+  const [picked, setPicked] = useState(false);
   const [toast, setToast] = useState('');
   const [announcement, setAnnouncement] = useState('');
   const [copied, setCopied] = useState(false);
@@ -120,14 +122,22 @@ export function Plane({ data }: { data: Portfolio }) {
 
   const fit = (instant = false) => {
     if (isReadView()) {
-      viewportRef.current?.scrollTo({ top: 0, behavior: instant || prefersReducedMotion() ? 'auto' : 'smooth' });
+      window.scrollTo({ top: 0, behavior: instant || prefersReducedMotion() ? 'auto' : 'smooth' });
       return;
     }
     camera.current.flyTo(cameraForBounds(bounds, camera.current.viewport()), instant || prefersReducedMotion() ? 0 : FIT_MS);
   };
 
-  const next = () => flyTo((active + 1) % n);
-  const prev = () => flyTo((active - 1 + n) % n);
+  /** Tour order on the canvas; top-to-bottom order in the reading view. */
+  const step = (d: 1 | -1) => {
+    if (!isReadView()) return flyTo((active + d + n) % n);
+    const order = layout.reading.map((f) => f.id);
+    const at = order.indexOf(frames[active]?.id ?? 'intro');
+    const id = order[(at + d + order.length) % order.length];
+    flyTo(frames.findIndex((f) => f.id === id));
+  };
+  const next = () => step(1);
+  const prev = () => step(-1);
 
   const toggleTheme = (mode?: 'light' | 'dark') => setTheme(mode ?? (theme === 'dark' ? 'light' : 'dark'));
 
@@ -165,7 +175,7 @@ export function Plane({ data }: { data: Portfolio }) {
       case 'grep':
         setPinned(a.tool);
         setHover(null);
-        fit();
+        if (!isReadView()) fit();
         return showToast(`${a.tool} — found in ${a.count} project${a.count === 1 ? '' : 's'}`);
       case 'clear':
         setPinned(null);
@@ -188,9 +198,20 @@ export function Plane({ data }: { data: Portfolio }) {
     }
   };
 
+  /** Clicking a tool in the stack pins its highlight without leaving the stack (the design's card click). */
+  const pinTool = (tool: string) => {
+    const count = projectsUsing(data, tool).length;
+    setPinned(tool);
+    setHover(null);
+    showToast(`${tool} — found in ${count} project${count === 1 ? '' : 's'}`);
+    const i = frames.findIndex((f) => f.kind === 'stack');
+    if (!isReadView() && i >= 0 && i !== active) flyTo(i);
+  };
+
   const runCommand = (c: string) => {
     setQuery('');
     setSel(0);
+    setPicked(false);
     inputRef.current?.blur();
     run(parseCommand(c, ctx));
   };
@@ -201,13 +222,18 @@ export function Plane({ data }: { data: Portfolio }) {
   const onInputKey = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown') {
       e.preventDefault();
+      setPicked(true);
       setSel((selected + 1) % Math.max(1, list.length));
     } else if (e.key === 'ArrowUp') {
       e.preventDefault();
+      setPicked(true);
       setSel((selected - 1 + list.length) % Math.max(1, list.length));
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      const c = resolveEnter(query, list, selected);
+      const c = resolveEnter(query, list, selected, {
+        picked,
+        isValid: (t) => parseCommand(t, ctx).type !== 'error',
+      });
       if (c) runCommand(c);
     } else if (e.key === 'Escape') {
       setQuery('');
@@ -238,7 +264,7 @@ export function Plane({ data }: { data: Portfolio }) {
     else if (k === 'Escape') {
       setPinned(null);
       setHover(null);
-      fit();
+      if (!isReadView()) fit();
     } else if ((k === '=' || k === '+') && !isReadView()) camera.current.zoomBy(1.3);
     else if ((k === '-' || k === '_') && !isReadView()) camera.current.zoomBy(1 / 1.3);
     else if (k === 'i') toggleTheme();
@@ -289,13 +315,19 @@ export function Plane({ data }: { data: Portfolio }) {
     try {
       seen = sessionStorage.getItem(BOOTED_KEY) === '1';
     } catch {}
-    if (prefersReducedMotion() || seen) {
+    // The boot animation is invisible in the reading view; land straight away there.
+    if (prefersReducedMotion() || seen || isReadView()) {
       const r = requestAnimationFrame(() => {
         setBoot(layout.frames.length);
         land(true);
       });
       return () => cancelAnimationFrame(r);
     }
+    // If the visitor starts moving around during the boot, don't yank the camera afterwards.
+    let moved = false;
+    const onMove = () => (moved = true);
+    const events = ['wheel', 'pointerdown', 'keydown', 'touchstart'] as const;
+    events.forEach((ev) => window.addEventListener(ev, onMove, { passive: true }));
     let b = 0;
     let settle: ReturnType<typeof setTimeout> | undefined;
     const tick = setInterval(() => {
@@ -306,12 +338,13 @@ export function Plane({ data }: { data: Portfolio }) {
         try {
           sessionStorage.setItem(BOOTED_KEY, '1');
         } catch {}
-        settle = setTimeout(() => land(false), BOOT_SETTLE_MS);
+        settle = setTimeout(() => !moved && land(false), BOOT_SETTLE_MS);
       }
     }, BOOT_STEP_MS);
     return () => {
       clearInterval(tick);
       clearTimeout(settle);
+      events.forEach((ev) => window.removeEventListener(ev, onMove));
     };
   }, [layout.frames]);
 
@@ -340,6 +373,29 @@ export function Plane({ data }: { data: Portfolio }) {
     };
   }, [layout.frames, worldRef]);
 
+  // Reading view: the active frame follows what's on screen, so ←/→, the counter and switching back all start there.
+  useEffect(() => {
+    const world = worldRef.current;
+    if (!read || !world) return;
+    const tops = new Map<string, number>();
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          const id = (e.target as HTMLElement).dataset.frame!;
+          if (e.isIntersecting) tops.set(id, e.boundingClientRect.top);
+          else tops.delete(id);
+        }
+        const first = [...tops.entries()].sort((a, b) => a[1] - b[1])[0];
+        if (!first) return;
+        const i = layout.frames.findIndex((f) => f.id === first[0]);
+        if (i >= 0) setActive(i);
+      },
+      { rootMargin: '-72px 0px -55% 0px' },
+    );
+    world.querySelectorAll('[data-frame]').forEach((el) => io.observe(el));
+    return () => io.disconnect();
+  }, [read, layout.frames, worldRef]);
+
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') return;
     const o = overlaps(frames);
@@ -365,7 +421,8 @@ export function Plane({ data }: { data: Portfolio }) {
       shown: shown.has(f.id),
       active: f.id === activeFrame.id,
       lit: isLit,
-      dim: !highlight ? null : isWork(f) ? (isLit ? null : 'strong') : f.kind === 'stack' ? null : 'soft',
+      // The stack stays readable while you hover its tools; a pinned grep dims it like the design.
+      dim: !highlight ? null : isWork(f) ? (isLit ? null : 'strong') : f.kind === 'stack' && hover ? null : 'soft',
     };
   };
 
@@ -400,7 +457,7 @@ export function Plane({ data }: { data: Portfolio }) {
             data={data}
             highlight={highlight}
             onHover={setHover}
-            onGrep={(tool) => run({ type: 'grep', tool, count: projectsUsing(data, tool).length })}
+            onGrep={pinTool}
           />
         );
       case 'contact':
@@ -452,7 +509,7 @@ export function Plane({ data }: { data: Portfolio }) {
   };
 
   return (
-    <div className={s.root}>
+    <div className={s.root} data-plane>
       <a className={s.skip} href="#frame-intro" onClick={(e) => (e.preventDefault(), toggleRead(true))}>
         Switch to reading view
       </a>
@@ -543,11 +600,12 @@ export function Plane({ data }: { data: Portfolio }) {
               ? `tour · open · grep`
               : `tour · fit · open ${hints.firstProject} · grep ${hints.grep}`
         }
-        position={active + 1}
+        position={read ? layout.reading.findIndex((f) => f.id === activeFrame.id) + 1 : active + 1}
         total={n}
         onQuery={(q) => {
           setQuery(q);
           setSel(0);
+          setPicked(false);
         }}
         onSel={setSel}
         onRun={runCommand}

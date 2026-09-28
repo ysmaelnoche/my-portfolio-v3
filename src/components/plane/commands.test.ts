@@ -95,6 +95,27 @@ describe('resolveEnter', () => {
     expect(resolveEnter('whatever', [], 0)).toBe('whatever');
     expect(resolveEnter('   ', [], 0)).toBeNull();
   });
+
+  it('runs valid typed commands instead of a fuzzy suggestion', () => {
+    const isValid = (c: string) => parseCommand(c, ctx).type !== 'error';
+    for (const alias of ['next', 'prev', 'ls', 'canvas', 'light', 'dark', 'home', 'back']) {
+      const listFor = suggestions(ctx, alias, { active: 0, highlight: null });
+      expect(resolveEnter(alias, listFor, 0, { isValid })).toBe(alias);
+    }
+  });
+
+  it('runs the picked suggestion once the user chose one with the arrows', () => {
+    const isValid = (c: string) => parseCommand(c, ctx).type !== 'error';
+    const listFor = suggestions(ctx, 'next', { active: 0, highlight: null });
+    expect(listFor.length).toBeGreaterThan(0);
+    expect(resolveEnter('next', listFor, 0, { isValid, picked: true })).toBe(listFor[0].c);
+  });
+
+  it('falls back to the suggestion when the typed text is not a command yet', () => {
+    const isValid = (c: string) => parseCommand(c, ctx).type !== 'error';
+    const listFor = suggestions(ctx, 'open net', { active: 0, highlight: null });
+    expect(resolveEnter('open net', listFor, 0, { isValid })).toBe('open network-dashboard');
+  });
 });
 
 describe('commandHints', () => {

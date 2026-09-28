@@ -30,12 +30,30 @@ export function useTheme(): Theme {
   );
 }
 
+type ViewTransitionDoc = Document & { startViewTransition?: (cb: () => void) => { finished: Promise<void> } };
+
+/**
+ * Switches theme like the design's invert: one crossfade of the whole page
+ * (View Transitions where supported), never element-by-element.
+ */
 export function setTheme(t: Theme) {
-  document.documentElement.dataset.theme = t;
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#f5f5f5' : '#0a0a0a');
+  const root = document.documentElement;
+  const apply = () => {
+    root.dataset.theme = t;
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#f5f5f5' : '#0a0a0a');
+  };
   try {
     localStorage.setItem(THEME_KEY, t);
   } catch {}
+  root.dataset.themeSwitching = '';
+  const done = () => delete root.dataset.themeSwitching;
+  const doc = document as ViewTransitionDoc;
+  if (doc.startViewTransition && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    doc.startViewTransition(apply).finished.then(done, done);
+  } else {
+    apply();
+    requestAnimationFrame(() => requestAnimationFrame(done));
+  }
 }
 
 export function useReadView(): boolean {

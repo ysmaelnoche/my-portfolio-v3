@@ -81,6 +81,23 @@ body {
   text-rendering: optimizeLegibility;
 }
 
+html[data-view='read'],
+html.no-js {
+  scroll-padding-top: 72px;
+}
+
+/* Theme switch: no per-element transitions mid-swap, and a short crossfade where supported. */
+html[data-theme-switching] *,
+html[data-theme-switching] *::before,
+html[data-theme-switching] *::after {
+  transition: none !important;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.4s;
+}
+
 a {
   color: inherit;
   text-decoration: none;

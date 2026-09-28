@@ -179,13 +179,21 @@ export function parseCommand(input: string, ctx: Ctx): Action {
 }
 
 /**
- * What Enter runs: an exact match, else the highlighted suggestion, else the
- * typed text as-is (so unknown commands still get a helpful error).
+ * What Enter runs: an exact match; else the typed text if it's already a valid
+ * command (so `next` isn't hijacked by a fuzzy `grep next.js`) and the user
+ * hasn't picked a suggestion with the arrows; else the highlighted suggestion;
+ * else the typed text as-is, so unknown commands still get a helpful error.
  */
-export function resolveEnter(query: string, list: Suggestion[], sel: number): string | null {
+export function resolveEnter(
+  query: string,
+  list: Suggestion[],
+  sel: number,
+  opts: { isValid?: (c: string) => boolean; picked?: boolean } = {},
+): string | null {
   const typed = query.trim().toLowerCase();
   const exact = list.find((x) => x.c === typed);
   if (exact) return exact.c;
+  if (typed && !opts.picked && opts.isValid?.(typed)) return typed;
   if (list[sel]) return list[sel].c;
   return typed || null;
 }

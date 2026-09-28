@@ -146,6 +146,9 @@ export function useCamera(opts: Options): { api: RefObject<CameraApi>; refs: Cam
     };
     s.vp = { W: vpEl.clientWidth, H: vpEl.clientHeight };
     apply();
+    // The app is alive: cancel the no-JS fallback (see the boot script in layout.tsx).
+    document.documentElement.setAttribute('data-plane-ready', '');
+    document.documentElement.classList.remove('no-js');
     const ro = new ResizeObserver(measure);
     ro.observe(vpEl);
 
