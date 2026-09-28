@@ -1385,8 +1385,6 @@
   margin: 0;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 1px solid var(--line);
-  background: var(--bg);
   cursor: crosshair;
   touch-action: none;
   --lx: 50%;
@@ -1412,19 +1410,6 @@
 
 .portraitDither {
   image-rendering: pixelated;
-}
-
-/* Each theme shows its own version: light dots on dark, or dark ink on light (never a negative). */
-.portraitLight {
-  display: none;
-}
-
-:global(html[data-theme='light']) .portraitLight {
-  display: block;
-}
-
-:global(html[data-theme='light']) .portraitDark {
-  display: none;
 }
 
 /* In the reading view the page must still scroll when a finger starts on the photo. */

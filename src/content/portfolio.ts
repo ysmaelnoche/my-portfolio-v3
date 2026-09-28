@@ -19,9 +19,8 @@ export const portfolio: Portfolio = {
   email: 'ysmaelnoche02@gmail.com',
   phone: '+63 969 049 3331',
   portrait: {
-    dither: '/portrait/dither.png',
-    ink: '/portrait/dither-ink.png',
-    photo: '/portrait/gray.jpg',
+    pixel: '/portrait/pixel.png',
+    photo: '/portrait/gray.webp',
     alt: 'Portrait of Ysmael Noche in a dark suit and tie, smiling',
   },
   intro:
