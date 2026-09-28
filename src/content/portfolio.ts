@@ -587,6 +587,7 @@ export const portfolio: Portfolio = {
         },
       ],
     },
+    // Draft: Ysmael will send the full Orbit details. Until then only list areas being explored, not finished features.
     {
       id: 'orbit',
       name: 'Orbit',
@@ -720,14 +721,19 @@ export const portfolio: Portfolio = {
   ],
   timeline: [
     { years: 'Jul 2026 — Now', role: 'Junior Data Engineer', org: 'Data & AI, Philippines' },
+    // TODO: add the school name to `org`.
+    {
+      years: 'May 2026',
+      role: 'B.S. Information Technology',
+      org: 'Graduated',
+      note: 'Lead developer, capstone project',
+    },
     {
       years: 'Feb — May 2026',
       role: 'Full Stack Developer Intern',
       org: 'Comrise, Inc.',
       note: 'Top Performer Award · 450 hours',
     },
-    // TODO: add school and graduation year.
-    { years: 'Education', role: 'B.S. Information Technology', org: 'Capstone lead developer' },
   ],
   links: [
     { label: 'GitHub', handle: '@ysmaelnoche', href: 'https://github.com/ysmaelnoche' },
