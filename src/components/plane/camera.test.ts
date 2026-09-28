@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { cameraForBounds, cameraForFrame, flightAt, screenToWorld, zoomAround, MAX_ZOOM, MIN_ZOOM } from './camera';
+import {
+  cameraForBounds,
+  cameraForFrame,
+  flightAt,
+  screenToWorld,
+  zoomAround,
+  MAX_ZOOM,
+  MIN_ZOOM,
+  NARROW_MIN_FRAME_ZOOM,
+} from './camera';
 
 const vp = { W: 1440, H: 900 };
 
@@ -21,6 +30,16 @@ describe('camera', () => {
     const c = cameraForFrame({ id: 'a', kind: 'intro', x: -300, y: -220, w: 600, h: 440, nh: 440, anchor: 'top' }, vp, false);
     expect(c.z).toBe(1.15);
     expect(c.x).toBe(0);
+  });
+
+  it('keeps wide frames readable on phones by aligning their top-left corner', () => {
+    const phone = { W: 390, H: 844 };
+    const stack = { id: 's', kind: 'stack' as const, x: -450, y: 440, w: 900, h: 700, nh: 400, anchor: 'top' as const };
+    const c = cameraForFrame(stack, phone, true);
+    expect(c.z).toBe(NARROW_MIN_FRAME_ZOOM);
+    // the frame's top-left lands 12px from the left, 60px from the top
+    expect(phone.W / 2 + (stack.x - c.x) * c.z).toBeCloseTo(12);
+    expect(phone.H / 2 + (stack.y - c.y) * c.z).toBeCloseTo(60);
   });
 
   it('fits bounds inside the viewport', () => {

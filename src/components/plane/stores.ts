@@ -88,7 +88,7 @@ function mediaStore(query: string) {
 }
 
 const reduced = mediaStore('(prefers-reduced-motion: reduce)');
-const narrow = mediaStore('(max-width: 819px)');
+const narrow = mediaStore('(max-width: 819px), (max-height: 520px)');
 
 export const prefersReducedMotion = reduced.get;
 export const isNarrow = narrow.get;
@@ -110,4 +110,50 @@ export function useModKey() {
     () => (/Mac|iPhone|iPad|iPod/.test(navigator.platform || navigator.userAgent) ? '⌘K' : 'Ctrl K'),
     () => '⌘K',
   );
+}
+
+// ---- single-key shortcuts (can be switched off: WCAG 2.1.4) ----
+
+const KEYS_KEY = 'plane:keys';
+const keyListeners = new Set<() => void>();
+
+export function singleKeysOn() {
+  try {
+    return localStorage.getItem(KEYS_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+export function setSingleKeys(on: boolean) {
+  try {
+    localStorage.setItem(KEYS_KEY, on ? 'on' : 'off');
+  } catch {}
+  keyListeners.forEach((l) => l());
+}
+
+export function useSingleKeys() {
+  return useSyncExternalStore(
+    (cb) => {
+      keyListeners.add(cb);
+      return () => keyListeners.delete(cb);
+    },
+    singleKeysOn,
+    () => true,
+  );
+}
+
+/** True when the visitor has chosen a view before (so we don't suggest the reading view again). */
+export function hasViewPreference() {
+  try {
+    return localStorage.getItem(VIEW_KEY) !== null;
+  } catch {
+    return true;
+  }
+}
+
+export function rememberView(on: boolean) {
+  try {
+    localStorage.setItem(VIEW_KEY, on ? 'read' : 'plane');
+  } catch {}
 }

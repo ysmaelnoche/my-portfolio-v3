@@ -3,7 +3,8 @@ import type { Bounds, Frame } from './layout';
 export type Camera = { x: number; y: number; z: number };
 export type Viewport = { W: number; H: number };
 
-export const MIN_ZOOM = 0.12;
+/** Low enough that the fit-everything view on a phone is still inside the range. */
+export const MIN_ZOOM = 0.05;
 export const MAX_ZOOM = 2.5;
 const MAX_FRAME_ZOOM = 1.15;
 
@@ -20,14 +21,22 @@ export function screenToWorld(cam: Camera, vp: Viewport, sx: number, sy: number)
   return { x: cam.x + (sx - vp.W / 2) / cam.z, y: cam.y + (sy - vp.H / 2) / cam.z };
 }
 
+/** Below this, text and targets get too small on a phone; wide frames are shown from their top-left instead. */
+export const NARROW_MIN_FRAME_ZOOM = 0.55;
+
 /**
  * Camera that frames one frame, leaving room for the side panels on wide
- * screens and the command bar below.
+ * screens and the command bar below. On narrow screens a frame too wide to
+ * fit at a readable size is aligned to the top-left instead (pan for the rest).
  */
 export function cameraForFrame(f: Frame, vp: Viewport, narrow: boolean): Camera {
   const side = narrow ? 0 : 240;
   const bottom = narrow ? 150 : 180;
   const z = Math.min(MAX_FRAME_ZOOM, ((vp.W - side * 2) * 0.86) / f.w, ((vp.H - bottom) * 0.88) / f.h);
+  if (narrow && z < NARROW_MIN_FRAME_ZOOM) {
+    const zz = NARROW_MIN_FRAME_ZOOM;
+    return { x: f.x + (vp.W / 2 - 12) / zz, y: f.y + (vp.H / 2 - 60) / zz, z: zz };
+  }
   return { x: f.x + f.w / 2, y: f.y + f.h / 2 + 10 / z, z };
 }
 

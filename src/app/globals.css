@@ -86,6 +86,11 @@ html.no-js {
   scroll-padding-top: 72px;
 }
 
+/* Keep focused controls clear of the fixed command bar. */
+html[data-view='read'] {
+  scroll-padding-bottom: 96px;
+}
+
 /* Theme switch: no per-element transitions mid-swap, and a short crossfade where supported. */
 html[data-theme-switching] *,
 html[data-theme-switching] *::before,
@@ -114,7 +119,7 @@ button {
 }
 
 input::placeholder {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 :focus-visible {

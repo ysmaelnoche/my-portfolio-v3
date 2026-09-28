@@ -27,20 +27,20 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0a0a0a',
   colorScheme: 'dark light',
   width: 'device-width',
   initialScale: 1,
-  viewportFit: 'cover',
 };
 
 /**
  * Runs before first paint: applies the saved theme and view so there's no
- * flash, and removes `no-js` (which otherwise shows the reading layout).
- * If the app still hasn't started after a while (a script failed to load),
- * it falls back to the reading layout instead of leaving a blank canvas.
+ * flash, owns the theme-color meta (so client navigations don't reset it),
+ * and removes `no-js` (which otherwise shows the reading layout).
+ * If the app still hasn't started after a while (a script failed or the
+ * network is very slow), it switches to the reading layout for good instead
+ * of leaving a blank canvas.
  */
-const bootScript = `(function(){var d=document.documentElement;d.classList.remove('no-js');try{var t=localStorage.getItem('plane:theme');if(t==='light'||t==='dark'){d.dataset.theme=t;var c=t==='light'?'#f5f5f5':'#0a0a0a',f=function(){var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute('content',c);};f();document.addEventListener('DOMContentLoaded',f);}if(localStorage.getItem('plane:view')==='read')d.dataset.view='read';}catch(e){}setTimeout(function(){if(document.querySelector('[data-plane]')&&!d.hasAttribute('data-plane-ready'))d.classList.add('no-js');},8000);})();`;
+const bootScript = `(function(){var d=document.documentElement;d.classList.remove('no-js');var t='dark';try{var s=localStorage.getItem('plane:theme');if(s==='light')t='light';if(localStorage.getItem('plane:view')==='read')d.dataset.view='read';}catch(e){}d.dataset.theme=t;var m=document.createElement('meta');m.name='theme-color';m.content=t==='light'?'#f5f5f5':'#0a0a0a';document.head.appendChild(m);setTimeout(function(){if(document.querySelector('[data-plane]')&&!d.hasAttribute('data-plane-ready')){d.classList.add('no-js');d.dataset.view='read';}},8000);})();`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

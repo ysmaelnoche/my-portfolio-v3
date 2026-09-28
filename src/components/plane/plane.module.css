@@ -101,6 +101,16 @@
   opacity: 0.15;
 }
 
+/* A dimmed frame that holds keyboard focus is shown in full. */
+.frame[data-shown][data-dim]:focus-within {
+  opacity: 1;
+}
+
+/* Frames take focus when navigated to; the active border already marks them. */
+.frame:focus {
+  outline: none;
+}
+
 .projectFrame {
   transition:
     opacity 0.5s,
@@ -344,7 +354,7 @@
   margin-top: 6px;
   font-family: var(--font-mono);
   font-size: 11px;
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 .card .projectDesc {
@@ -503,7 +513,7 @@
 }
 
 .stackItem[data-dim] {
-  color: var(--text-dim);
+  color: var(--text-muted);
 }
 
 /* contact — the one inverted card */
@@ -693,7 +703,7 @@
   transform: scaleX(-1);
 }
 
-.topBtn[aria-pressed='true'] {
+.topBtn[data-on] {
   background: var(--fg);
   border-color: var(--fg);
   color: var(--bg);
@@ -735,6 +745,9 @@
   top: 64px;
   z-index: 10;
   width: 220px;
+  max-height: calc(100% - 64px - 92px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 6px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -860,6 +873,9 @@
 }
 
 .suggest {
+  max-height: calc(100dvh - 45px - 52px - 44px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   margin: 0 0 8px;
   padding: 6px;
   list-style: none;
@@ -890,11 +906,21 @@
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  color: var(--text-quiet);
+  color: var(--text-muted);
+}
+
+.suggestItem[aria-selected='true'] .suggestDesc {
+  color: var(--text-body);
 }
 
 .noMatch {
+  margin: 0 0 8px;
   padding: 9px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--surface-raised);
+  font-family: var(--font-mono);
+  font-size: 13px;
   color: var(--text-muted);
 }
 
@@ -952,6 +978,20 @@
 
 .input:focus-visible {
   outline: 0;
+}
+
+/* 16px stops iOS Safari zooming the page when the command bar is focused. */
+@media (pointer: coarse) {
+  .input {
+    font-size: 16px;
+  }
+}
+
+/* Keep the minimap clear of the command bar on mid-width screens. */
+@media (min-width: 820px) and (max-width: 1099px) {
+  .minimap {
+    bottom: 88px;
+  }
 }
 
 .navBtn {
@@ -1031,6 +1071,42 @@
   margin: 0;
 }
 
+.helpToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 8px 0;
+  border-top: 1px solid var(--line);
+  color: var(--text-body);
+  cursor: pointer;
+}
+
+.helpToggle input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--fg);
+}
+
+.notice {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px 8px 8px 14px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface-raised);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-body);
+}
+
+.notice span {
+  flex: 1;
+}
+
 .helpList div {
   display: grid;
   grid-template-columns: 170px 1fr;
@@ -1049,8 +1125,9 @@
 }
 
 /* ------------------------------------------------------------------ narrow */
+/* Phones in portrait and landscape (short screens) get the compact chrome. */
 
-@media (max-width: 819px) {
+@media (max-width: 819px), (max-height: 520px) {
   .layers,
   .minimap,
   .coords,
@@ -1156,9 +1233,9 @@
   transform: none;
 }
 
-:global(html[data-view='read']) .frame[data-dim='soft'],
-:global(html[data-view='read']) .frame[data-dim='strong'] {
-  opacity: 0.35;
+:global(html[data-view='read']) .frame[data-dim] {
+  /* No dimming in the reading view: matches are marked by their border instead. */
+  opacity: 1;
 }
 
 :global(html[data-view='read']) .card {
@@ -1166,7 +1243,8 @@
 }
 
 :global(html[data-view='read']) .frameLabel {
-  color: var(--text-dim);
+  /* In the reading view the labels act as section captions, so they need full contrast. */
+  color: var(--text-muted);
 }
 
 :global(html[data-view='read']) .frame[data-active] .card {

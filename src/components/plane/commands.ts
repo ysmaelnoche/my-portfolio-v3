@@ -15,7 +15,8 @@ export type Action =
   | { type: 'copy-email' }
   | { type: 'help' }
   | { type: 'navigate'; href: string }
-  | { type: 'error'; message: string };
+  /** `known` marks a real command that can't run right now (so Enter doesn't swap it for a suggestion). */
+  | { type: 'error'; message: string; known?: boolean };
 
 type Ctx = Pick<Portfolio, 'projects' | 'skills' | 'email' | 'hints'> & Partial<Pick<Portfolio, 'groups'>> & { frames: Frame[] };
 
@@ -164,7 +165,9 @@ export function parseCommand(input: string, ctx: Ctx): Action {
       return { type: 'read', on: false };
     case 'copy email':
     case 'email':
-      return ctx.email ? { type: 'copy-email' } : { type: 'error', message: 'no public email yet — see contact' };
+      return ctx.email
+        ? { type: 'copy-email' }
+        : { type: 'error', message: 'no public email yet — see contact', known: true };
     case 'help':
     case '?':
       return { type: 'help' };

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { Portfolio } from '@/content/types';
 import { site } from '@/content/site';
 import { cameraForBounds, cameraForFrame } from './camera';
@@ -10,15 +10,20 @@ import { commandHints, parseCommand, projectsUsing, resolveEnter, suggestions, t
 import { AboutFrame, ContactFrame, GroupFrame, IntroFrame, ProjectFrame, StackFrame, type FrameState } from './Frames';
 import { boundsOf, centerOf, computeLayout, frameOfProject, overlaps, withHeights, workItems, type Frame } from './layout';
 import {
+  hasViewPreference,
   isNarrow,
   isReadView,
   prefersReducedMotion,
+  rememberView,
   setReadView,
+  setSingleKeys,
   setTheme,
+  singleKeysOn,
   useModKey,
   useNarrow,
   useReadView,
   useReducedMotion,
+  useSingleKeys,
   useTheme,
 } from './stores';
 import { useCamera } from './useCamera';
@@ -32,12 +37,24 @@ const TOAST_MS = 2600;
 /** Set once the boot sequence has played, so coming back from a case study doesn't replay it. */
 const BOOTED_KEY = 'plane:booted';
 
+type FlyOpts = {
+  instant?: boolean;
+  updateHash?: boolean;
+  /** Don't announce to screen readers (e.g. the landing after the boot sequence). */
+  silent?: boolean;
+  /** Move keyboard focus to the frame (explicit navigation: keys, layers, commands). */
+  focus?: boolean;
+};
+
 type Live = {
   onKey: (e: KeyboardEvent) => void;
   onTap: (target: Element) => void;
-  flyTo: (i: number, opts?: { instant?: boolean; updateHash?: boolean }) => void;
+  flyTo: (i: number, opts?: FlyOpts) => void;
   fit: (instant?: boolean) => void;
 };
+
+/** Slower than this to hydrate and the staggered boot is skipped: the visitor has waited enough. */
+const LATE_HYDRATION_MS = 1500;
 
 export function Plane({ data }: { data: Portfolio }) {
   const layout = useMemo(() => computeLayout(data), [data]);
@@ -69,6 +86,10 @@ export function Plane({ data }: { data: Portfolio }) {
   const [picked, setPicked] = useState(false);
   const [toast, setToast] = useState('');
   const [announcement, setAnnouncement] = useState('');
+  const [viewHint, setViewHint] = useState(false);
+  const keysOn = useSingleKeys();
+  /** Set while we move focus ourselves, so the focus-follow handler doesn't fly a second time. */
+  const focusing = useRef(false);
   const [copied, setCopied] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
 
@@ -100,14 +121,19 @@ export function Plane({ data }: { data: Portfolio }) {
     toastTimer.current = setTimeout(() => setToast(''), TOAST_MS);
   };
 
-  const flyTo = (i: number, opts: { instant?: boolean; updateHash?: boolean } = {}) => {
+  const flyTo = (i: number, opts: FlyOpts = {}) => {
     const f = frames[i];
     if (!f) return;
     setActive(i);
-    setAnnouncement(`${f.id} — frame ${i + 1} of ${n}`);
+    if (!opts.silent) setAnnouncement(`${f.id} — frame ${i + 1} of ${n}`);
     if (opts.updateHash !== false) {
       const url = f.id === 'intro' ? location.pathname + location.search : `#${f.id}`;
       history.replaceState(null, '', url);
+    }
+    if (opts.focus) {
+      focusing.current = true;
+      document.getElementById(`frame-${f.id}`)?.focus({ preventScroll: true });
+      focusing.current = false;
     }
     const instant = opts.instant || prefersReducedMotion();
     if (isReadView()) {
@@ -130,11 +156,14 @@ export function Plane({ data }: { data: Portfolio }) {
 
   /** Tour order on the canvas; top-to-bottom order in the reading view. */
   const step = (d: 1 | -1) => {
-    if (!isReadView()) return flyTo((active + d + n) % n);
+    if (!isReadView()) return flyTo((active + d + n) % n, { focus: true });
     const order = layout.reading.map((f) => f.id);
     const at = order.indexOf(frames[active]?.id ?? 'intro');
     const id = order[(at + d + order.length) % order.length];
-    flyTo(frames.findIndex((f) => f.id === id));
+    flyTo(
+      frames.findIndex((f) => f.id === id),
+      { focus: true },
+    );
   };
   const next = () => step(1);
   const prev = () => step(-1);
@@ -143,8 +172,10 @@ export function Plane({ data }: { data: Portfolio }) {
 
   const toggleRead = (on = !isReadView()) => {
     setReadView(on);
+    setViewHint(false);
+    setAnnouncement(on ? 'Reading view' : 'Plane view');
     // Land on the same frame in the other view.
-    requestAnimationFrame(() => flyTo(active, { instant: true, updateHash: false }));
+    requestAnimationFrame(() => flyTo(active, { instant: true, updateHash: false, silent: true }));
   };
 
   const copyEmail = async (): Promise<boolean> => {
@@ -165,7 +196,7 @@ export function Plane({ data }: { data: Portfolio }) {
   const run = (a: Action) => {
     switch (a.type) {
       case 'fly':
-        return flyTo(a.index);
+        return flyTo(a.index, { focus: true });
       case 'next':
         return next();
       case 'prev':
@@ -212,8 +243,10 @@ export function Plane({ data }: { data: Portfolio }) {
     setQuery('');
     setSel(0);
     setPicked(false);
-    inputRef.current?.blur();
-    run(parseCommand(c, ctx));
+    const action = parseCommand(c, ctx);
+    // Navigation moves focus to the frame itself; everything else just leaves the bar.
+    if (!['fly', 'next', 'prev'].includes(action.type)) inputRef.current?.blur();
+    run(action);
   };
 
   const list = suggestions(ctx, query, { active, highlight });
@@ -232,12 +265,16 @@ export function Plane({ data }: { data: Portfolio }) {
       e.preventDefault();
       const c = resolveEnter(query, list, selected, {
         picked,
-        isValid: (t) => parseCommand(t, ctx).type !== 'error',
+        isValid: (t) => {
+          const a = parseCommand(t, ctx);
+          return a.type !== 'error' || !!a.known;
+        },
       });
       if (c) runCommand(c);
     } else if (e.key === 'Escape') {
-      setQuery('');
-      e.currentTarget.blur();
+      // First Escape clears the text; a second one leaves the bar.
+      if (query) setQuery('');
+      else e.currentTarget.blur();
     }
   };
 
@@ -251,6 +288,8 @@ export function Plane({ data }: { data: Portfolio }) {
     const typing = !!t && (['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName) || t.isContentEditable);
     if (typing || e.metaKey || e.ctrlKey || e.altKey || helpOpen) return;
     const k = e.key;
+    // Single-character shortcuts can be switched off in the help dialog.
+    if (k.length === 1 && !singleKeysOn()) return;
     if (k === '/') {
       e.preventDefault();
       inputRef.current?.focus();
@@ -265,12 +304,12 @@ export function Plane({ data }: { data: Portfolio }) {
       setPinned(null);
       setHover(null);
       if (!isReadView()) fit();
-    } else if ((k === '=' || k === '+') && !isReadView()) camera.current.zoomBy(1.3);
-    else if ((k === '-' || k === '_') && !isReadView()) camera.current.zoomBy(1 / 1.3);
+    } else if ((k === '=' || k === '+') && !isReadView()) camera.current.zoomBy(1.3, prefersReducedMotion() ? 0 : 250);
+    else if ((k === '-' || k === '_') && !isReadView()) camera.current.zoomBy(1 / 1.3, prefersReducedMotion() ? 0 : 250);
     else if (k === 'i') toggleTheme();
     else if (k === 'r') toggleRead();
     else if (k === '?') setHelpOpen(true);
-    else if (/^[1-9]$/.test(k)) flyTo(+k - 1);
+    else if (/^[1-9]$/.test(k)) flyTo(+k - 1, { focus: true });
   };
 
   const onTap = (target: Element) => {
@@ -310,13 +349,14 @@ export function Plane({ data }: { data: Portfolio }) {
       const id = decodeURIComponent(location.hash.slice(1));
       return Math.max(0, layout.frames.findIndex((f) => f.id === id));
     };
-    const land = (instant: boolean) => live.current.flyTo(target(), { instant, updateHash: false });
+    const land = (instant: boolean) => live.current.flyTo(target(), { instant, updateHash: false, silent: true });
     let seen = false;
     try {
       seen = sessionStorage.getItem(BOOTED_KEY) === '1';
     } catch {}
     // The boot animation is invisible in the reading view; land straight away there.
-    if (prefersReducedMotion() || seen || isReadView()) {
+    const late = performance.now() > LATE_HYDRATION_MS;
+    if (prefersReducedMotion() || seen || late || isReadView()) {
       const r = requestAnimationFrame(() => {
         setBoot(layout.frames.length);
         land(true);
@@ -393,8 +433,27 @@ export function Plane({ data }: { data: Portfolio }) {
       { rootMargin: '-72px 0px -55% 0px' },
     );
     world.querySelectorAll('[data-frame]').forEach((el) => io.observe(el));
-    return () => io.disconnect();
-  }, [read, layout.frames, worldRef]);
+    // At the very bottom the last frame may never reach the band above; count it as active there.
+    const onScroll = () => {
+      const el = document.documentElement;
+      if (window.scrollY + window.innerHeight < el.scrollHeight - 2) return;
+      const last = layout.reading[layout.reading.length - 1];
+      const i = layout.frames.findIndex((f) => f.id === last.id);
+      if (i >= 0) setActive(i);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      io.disconnect();
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, [read, layout.frames, layout.reading, worldRef]);
+
+  // Phones: suggest the reading view once, unless the visitor has already picked a view.
+  useEffect(() => {
+    if (!booted || read || !isNarrow() || hasViewPreference()) return;
+    const t = setTimeout(() => setViewHint(true), 1200);
+    return () => clearTimeout(t);
+  }, [booted, read]);
 
   useEffect(() => {
     if (process.env.NODE_ENV === 'production') return;
@@ -514,6 +573,29 @@ export function Plane({ data }: { data: Portfolio }) {
         Switch to reading view
       </a>
 
+      {/* Header and frame list come first in reading and tab order; they're positioned over the canvas. */}
+      <TopBar
+        monogram={site.monogram}
+        version={site.version}
+        handle={data.handle}
+        path={path}
+        read={read}
+        theme={theme}
+        coordRef={coordRef}
+        zoomRef={zoomRef}
+        onToggleRead={() => toggleRead()}
+        onToggleTheme={() => toggleTheme()}
+        onHelp={() => setHelpOpen(true)}
+      />
+
+      <LayersPanel
+        frames={frames}
+        active={active}
+        faded={faded}
+        visible={booted}
+        onGo={(i) => flyTo(i, { focus: true })}
+      />
+
       <div ref={viewportRef} className={s.viewport}>
         <div ref={gridRef} className={s.grid} aria-hidden="true" />
         <main
@@ -521,10 +603,13 @@ export function Plane({ data }: { data: Portfolio }) {
           className={s.world}
           onFocus={(e) => {
             // Keyboard focus moving into another frame flies the camera there.
-            if (isReadView() || !(e.target as HTMLElement).matches(':focus-visible')) return;
+            if (focusing.current || isReadView() || !(e.target as HTMLElement).matches(':focus-visible')) return;
             const el = (e.target as HTMLElement).closest<HTMLElement>('[data-frame]');
             const i = el ? frames.findIndex((f) => f.id === el.dataset.frame) : -1;
-            if (i >= 0 && i !== active) flyTo(i);
+            if (i < 0) return;
+            // Also fly when zoomed far out, so the focused control is readable.
+            const want = cameraForFrame(frames[i], camera.current.viewport(), isNarrow()).z;
+            if (i !== active || camera.current.get().z < want * 0.6) flyTo(i);
           }}
         >
           <div className={s.links} aria-hidden="true">
@@ -542,23 +627,20 @@ export function Plane({ data }: { data: Portfolio }) {
               />
             ))}
           </div>
-          {layout.reading.map((nominal) => renderFrame(byId.get(nominal.id) ?? nominal))}
+          {layout.reading.map((nominal, i) => {
+            const f = byId.get(nominal.id) ?? nominal;
+            const firstWork = isWork(f) && !layout.reading.slice(0, i).some(isWork);
+            return firstWork ? (
+              <Fragment key={f.id}>
+                <h2 className="sr-only">Work</h2>
+                {renderFrame(f)}
+              </Fragment>
+            ) : (
+              renderFrame(f)
+            );
+          })}
         </main>
       </div>
-
-      <TopBar
-        monogram={site.monogram}
-        version={site.version}
-        handle={data.handle}
-        path={path}
-        read={read}
-        theme={theme}
-        coordRef={coordRef}
-        zoomRef={zoomRef}
-        onToggleRead={() => toggleRead()}
-        onToggleTheme={() => toggleTheme()}
-        onHelp={() => setHelpOpen(true)}
-      />
 
       {!booted && (
         <BootLog
@@ -568,8 +650,6 @@ export function Plane({ data }: { data: Portfolio }) {
           }))}
         />
       )}
-
-      <LayersPanel frames={frames} active={active} faded={faded} visible={booted} onGo={flyTo} />
 
       <Minimap
         frames={frames}
@@ -613,12 +693,42 @@ export function Plane({ data }: { data: Portfolio }) {
         onFocusChange={setFocused}
         onPrev={prev}
         onNext={next}
+        notice={
+          viewHint ? (
+            <div className={s.notice} role="note">
+              <span>small screen? the reading view is easier here</span>
+              <button type="button" className={s.topBtn} onClick={() => toggleRead(true)}>
+                read
+              </button>
+              <button
+                type="button"
+                className={s.topBtn}
+                aria-label="Dismiss — keep the plane"
+                onClick={() => {
+                  setViewHint(false);
+                  rememberView(false);
+                }}
+              >
+                ×
+              </button>
+            </div>
+          ) : null
+        }
       />
 
-      <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <HelpDialog
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        keysOn={keysOn}
+        onKeysChange={setSingleKeys}
+      />
 
+      {/* Two regions so a toast never swallows a navigation announcement. */}
       <div role="status" aria-live="polite" className="sr-only">
-        {toast || announcement}
+        {announcement}
+      </div>
+      <div role="status" aria-live="polite" className="sr-only">
+        {toast}
       </div>
     </div>
   );

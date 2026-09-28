@@ -50,6 +50,7 @@ function Shell({
       data-lit={state.lit || undefined}
       data-dim={state.dim ?? undefined}
       aria-labelledby={labelledBy}
+      tabIndex={-1}
       className={`${s.frame} ${className ?? ''}`}
       style={style}
     >

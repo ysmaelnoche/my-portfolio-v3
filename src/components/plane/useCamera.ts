@@ -165,20 +165,32 @@ export function useCamera(opts: Options): { api: RefObject<CameraApi>; refs: Cam
 
     // ---- pointer: drag to pan, two fingers to pinch, tap to select ----
     const pointers = new Map<number, { x: number; y: number }>();
-    let drag: { x: number; y: number; cx: number; cy: number; moved: boolean; target: Element } | null = null;
+    type Drag = { x: number; y: number; cx: number; cy: number; moved: boolean; target: Element; interactive: boolean };
+    let drag: Drag | null = null;
     let pinch: { d: number; mx: number; my: number } | null = null;
+    // A touch drag that started on a link/button pans instead; the click it would fire is swallowed.
+    let suppressClick = false;
+    let suppressTimer: ReturnType<typeof setTimeout> | undefined;
+    const onClickCapture = (e: MouseEvent) => {
+      if (!suppressClick) return;
+      suppressClick = false;
+      e.preventDefault();
+      e.stopPropagation();
+    };
 
     const onDown = (e: PointerEvent) => {
       if (!live.current.enabled) return;
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       const target = e.target as Element;
-      if (target.closest(INTERACTIVE)) return;
+      const interactive = !!target.closest(INTERACTIVE);
+      // Mouse on a control: leave it to the browser (text selection, clicks).
+      if (interactive && e.pointerType === 'mouse') return;
       const ae = document.activeElement;
       if (ae instanceof HTMLInputElement) ae.blur();
       s.flight = null;
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (pointers.size === 1) {
-        drag = { x: e.clientX, y: e.clientY, cx: s.cam.x, cy: s.cam.y, moved: false, target };
+        drag = { x: e.clientX, y: e.clientY, cx: s.cam.x, cy: s.cam.y, moved: false, target, interactive };
       } else if (drag) {
         drag.moved = true;
         pinch = null;
@@ -219,13 +231,18 @@ export function useCamera(opts: Options): { api: RefObject<CameraApi>; refs: Cam
       pointers.delete(e.pointerId);
       pinch = null;
       if (pointers.size === 0) {
-        if (drag && !drag.moved && e.type === 'pointerup') live.current.onTap(drag.target);
+        if (drag && !drag.moved && !drag.interactive && e.type === 'pointerup') live.current.onTap(drag.target);
+        if (drag?.moved && drag.interactive) {
+          suppressClick = true;
+          clearTimeout(suppressTimer);
+          suppressTimer = setTimeout(() => (suppressClick = false), 400);
+        }
         drag = null;
         delete vpEl.dataset.dragging;
       } else if (pointers.size === 1) {
         // One finger lifted mid-pinch: keep panning with the other.
         const [p] = [...pointers.values()];
-        drag = { x: p.x, y: p.y, cx: s.cam.x, cy: s.cam.y, moved: true, target: vpEl };
+        drag = { x: p.x, y: p.y, cx: s.cam.x, cy: s.cam.y, moved: true, target: vpEl, interactive: false };
       }
     };
 
@@ -260,6 +277,7 @@ export function useCamera(opts: Options): { api: RefObject<CameraApi>; refs: Cam
     };
 
     vpEl.addEventListener('pointerdown', onDown);
+    vpEl.addEventListener('click', onClickCapture, true);
     window.addEventListener('pointermove', onMove);
     window.addEventListener('pointerup', onUp);
     window.addEventListener('pointercancel', onUp);
@@ -273,6 +291,8 @@ export function useCamera(opts: Options): { api: RefObject<CameraApi>; refs: Cam
       ro.disconnect();
       vpEl.removeEventListener('scroll', onScroll);
       vpEl.removeEventListener('pointerdown', onDown);
+      vpEl.removeEventListener('click', onClickCapture, true);
+      clearTimeout(suppressTimer);
       window.removeEventListener('pointermove', onMove);
       window.removeEventListener('pointerup', onUp);
       window.removeEventListener('pointercancel', onUp);

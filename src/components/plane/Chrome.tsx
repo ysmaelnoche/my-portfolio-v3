@@ -61,7 +61,13 @@ export function TopBar({
         {/* Filled in by the camera; empty until it knows where it is. */}
         <span ref={coordRef} className={s.coords} aria-hidden="true" />
         <span ref={zoomRef} className={s.zoom} aria-hidden="true" />
-        <button type="button" className={s.topBtn} onClick={blurAfter(onToggleRead)} aria-pressed={read}>
+        <button
+          type="button"
+          className={s.topBtn}
+          onClick={blurAfter(onToggleRead)}
+          data-on={read || undefined}
+          aria-label={read ? 'plane — switch to the canvas view' : 'read — switch to the reading view'}
+        >
           {read ? 'plane' : 'read'}
         </button>
         <button
@@ -210,6 +216,7 @@ export function CommandBar({
   onFocusChange,
   onPrev,
   onNext,
+  notice,
 }: {
   inputRef: RefObject<HTMLInputElement | null>;
   query: string;
@@ -227,13 +234,22 @@ export function CommandBar({
   onFocusChange: (f: boolean) => void;
   onPrev: () => void;
   onNext: () => void;
+  /** Optional message above the bar (e.g. the reading view suggestion on phones). */
+  notice?: React.ReactNode;
 }) {
   const noMatch = !!query.trim() && list.length === 0;
   const pad = (n: number) => String(n).padStart(2, '0');
+  const listRef = useRef<HTMLUListElement>(null);
+  // Keep the highlighted suggestion visible when the list scrolls (short screens).
+  useEffect(() => {
+    listRef.current?.querySelector(`#cmd-opt-${sel}`)?.scrollIntoView({ block: 'nearest' });
+  }, [sel, focused]);
+  const expanded = focused && list.length > 0;
   return (
-    <div className={s.cmd}>
-      {focused && (
-        <ul id="cmd-list" role="listbox" aria-label="Commands" className={s.suggest}>
+    <section className={s.cmd} aria-label="Command bar">
+      {notice}
+      {expanded && (
+        <ul ref={listRef} id="cmd-list" role="listbox" aria-label="Commands" className={s.suggest}>
           {list.map((x, i) => (
             <li
               key={x.c}
@@ -251,12 +267,12 @@ export function CommandBar({
               <span className={s.suggestDesc}>{x.d}</span>
             </li>
           ))}
-          {noMatch && (
-            <li role="presentation" className={s.noMatch}>
-              no match for “{query}” — press enter to run it anyway
-            </li>
-          )}
         </ul>
+      )}
+      {focused && noMatch && (
+        <p id="cmd-nomatch" className={s.noMatch}>
+          no match for “{query}” — press enter to run it anyway
+        </p>
       )}
       {!!toast && !focused && (
         <div className={s.toast} aria-hidden="true">
@@ -280,10 +296,11 @@ export function CommandBar({
             autoCapitalize="off"
             enterKeyHint="go"
             role="combobox"
-            aria-expanded={focused}
-            aria-controls="cmd-list"
+            aria-expanded={expanded}
+            aria-controls={expanded ? 'cmd-list' : undefined}
             aria-autocomplete="list"
-            aria-activedescendant={focused && list[sel] ? `cmd-opt-${sel}` : undefined}
+            aria-activedescendant={expanded && list[sel] ? `cmd-opt-${sel}` : undefined}
+            aria-describedby={focused && noMatch ? 'cmd-nomatch' : undefined}
             onChange={(e) => onQuery(e.target.value)}
             onKeyDown={onKeyDown}
             onFocus={() => onFocusChange(true)}
@@ -300,7 +317,7 @@ export function CommandBar({
           →
         </button>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -328,7 +345,18 @@ const COMMANDS: [string, string][] = [
   ['copy email', 'copy the email address'],
 ];
 
-export function HelpDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function HelpDialog({
+  open,
+  onClose,
+  keysOn,
+  onKeysChange,
+}: {
+  open: boolean;
+  onClose: () => void;
+  /** Single-character shortcuts (r, i, 0–9, +, −, /, ?) can be switched off. */
+  keysOn: boolean;
+  onKeysChange: (on: boolean) => void;
+}) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {
     const d = ref.current;
@@ -347,7 +375,7 @@ export function HelpDialog({ open, onClose }: { open: boolean; onClose: () => vo
       <div className={s.helpInner}>
         <div className={s.helpHead}>
           <h2 id="help-title">~/help</h2>
-          <button type="button" className={s.topBtn} onClick={onClose} aria-label="Close">
+          <button type="button" className={s.topBtn} onClick={onClose} aria-label="Close (esc)">
             esc
           </button>
         </div>
@@ -360,6 +388,10 @@ export function HelpDialog({ open, onClose }: { open: boolean; onClose: () => vo
             </div>
           ))}
         </dl>
+        <label className={s.helpToggle}>
+          <input type="checkbox" checked={keysOn} onChange={(e) => onKeysChange(e.target.checked)} />
+          <span>single-key shortcuts (r, i, 0–9, +, −, /, ?)</span>
+        </label>
         <h3>commands</h3>
         <dl className={s.helpList}>
           {COMMANDS.map(([k, v]) => (
