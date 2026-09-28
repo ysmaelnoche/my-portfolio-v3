@@ -1,17 +1,17 @@
 // Regenerate the portrait assets:
-//   node scripts/dither-portrait.mjs <photo> public/portrait [cols=200]
+//   node scripts/dither-portrait.mjs <photo> public/portrait [cols=280] [levels=6] [contrast=1.05]
 // Makes pixel.png (grayscale ordered dither, background faded to transparent)
 // and gray.webp (smooth grayscale for the hover lens). Needs Playwright's
 // Chromium (the image work runs in a canvas); not part of the build.
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'node:fs';
 
-const [src, outDir, colsArg = '200'] = process.argv.slice(2);
+const [src, outDir, colsArg = '280', levelsArg = '6', contrastArg = '1.05'] = process.argv.slice(2);
 const b = await chromium.launch();
 const p = await b.newPage();
 const dataUrl = `data:image/${src.endsWith('.png') ? 'png' : 'jpeg'};base64,` + readFileSync(src).toString('base64');
 const res = await p.evaluate(
-  async ({ dataUrl, cols }) => {
+  async ({ dataUrl, cols, levels, contrast }) => {
     const img = new Image();
     img.src = dataUrl;
     await img.decode();
@@ -53,12 +53,12 @@ const res = await p.evaluate(
     dx.drawImage(img, 0, cy, cw, ch, 0, 0, w, w);
     const px = dx.getImageData(0, 0, w, w);
     const B = [0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5];
-    const LV = 4; // steps between levels → 5 grays
+    const LV = levels; // steps between gray levels
     for (let i = 0; i < w * w; i++) {
       const x = i % w,
         y = Math.floor(i / w);
       let v = (px.data[i * 4] * 0.299 + px.data[i * 4 + 1] * 0.587 + px.data[i * 4 + 2] * 0.114) / 255;
-      v = Math.max(0, Math.min(1, (v - 0.5) * 1.12 + 0.52));
+      v = Math.max(0, Math.min(1, (v - 0.5) * contrast + 0.52));
       const t = (B[(y % 4) * 4 + (x % 4)] + 0.5) / 16;
       const q = Math.min(LV, Math.floor(v * LV + t)) / LV;
       const c = Math.round(44 + q * (240 - 44)); // darkest tone stays visible on the dark theme
@@ -71,7 +71,7 @@ const res = await p.evaluate(
     dx.putImageData(px, 0, 0);
     return { gray, pixel: d.toDataURL('image/png') };
   },
-  { dataUrl, cols: +colsArg },
+  { dataUrl, cols: +colsArg, levels: +levelsArg, contrast: +contrastArg },
 );
 const save = (name, url) => writeFileSync(`${outDir}/${name}`, Buffer.from(url.split(',')[1], 'base64'));
 save('pixel.png', res.pixel);

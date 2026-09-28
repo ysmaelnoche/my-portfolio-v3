@@ -27,7 +27,7 @@ export function Portrait({ pixel, photo, alt }: { pixel: string; photo: string; 
   return (
     <div ref={ref} className={s.portrait} role="img" aria-label={alt} onPointerMove={move} onPointerDown={move} onPointerLeave={leave} onPointerCancel={leave}>
       {/* eslint-disable-next-line @next/next/no-img-element -- tiny pixel PNG; next/image would smooth the pixels */}
-      <img className={s.portraitDither} src={pixel} alt="" width={200} height={200} decoding="async" />
+      <img className={s.portraitDither} src={pixel} alt="" width={280} height={280} decoding="async" />
       {/* eslint-disable-next-line @next/next/no-img-element -- lens layer, same box as the dither */}
       <img className={s.portraitPhoto} src={photo} alt="" aria-hidden="true" width={480} height={480} loading="lazy" decoding="async" />
       <span className={s.portraitScan} aria-hidden="true" />
