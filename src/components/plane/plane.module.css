@@ -1319,6 +1319,11 @@
     font-size: clamp(52px, 17vw, 96px);
   }
 
+  :global(html[data-view='read']) .card .portrait,
+  :global(html.no-js) .card .portrait {
+    width: clamp(88px, 26vw, 172px);
+  }
+
   :global(html[data-view='read']) .lede,
   :global(html.no-js) .lede {
     font-size: 17px;
@@ -1361,9 +1366,23 @@
   initial-value: 0px;
 }
 
+.nameRow {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 18px 0 22px;
+}
+
+.nameRow .name {
+  margin: 0;
+}
+
 .card .portrait {
   position: relative;
-  margin: 0 0 28px;
+  flex: none;
+  width: 172px;
+  margin: 0;
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -1377,7 +1396,7 @@
 }
 
 .portrait[data-lens] {
-  --lr: 64px;
+  --lr: 44px;
 }
 
 .portraitDither,
@@ -1428,21 +1447,6 @@
   height: 2px;
   background: var(--fg);
   opacity: 0;
-  pointer-events: none;
-}
-
-.portraitCaption {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: space-between;
-  padding: 6px 8px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-muted);
-  background: linear-gradient(transparent, var(--bg));
   pointer-events: none;
 }
 

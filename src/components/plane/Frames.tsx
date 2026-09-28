@@ -82,15 +82,18 @@ export function IntroFrame({
     <Shell frame={frame} path={`~/${data.handle}`} state={state} labelledBy="intro-title">
       <div className={`${s.card} ${s.introCard}`} data-card="intro">
         <p className={s.meta}>{[data.role, data.location].join(' · ').toLowerCase()}</p>
-        <h1 id="intro-title" className={s.name}>
-          {first}
-          {rest.length > 0 && (
-            <>
-              <br />
-              {rest.join(' ')}
-            </>
-          )}
-        </h1>
+        <div className={s.nameRow}>
+          <h1 id="intro-title" className={s.name}>
+            {first}
+            {rest.length > 0 && (
+              <>
+                <br />
+                {rest.join(' ')}
+              </>
+            )}
+          </h1>
+          {data.portrait && <Portrait {...data.portrait} />}
+        </div>
         <p className={s.lede}>{data.intro}</p>
         <div className={s.hint}>
           <kbd className={s.kbd}>{modKey}</kbd>
@@ -110,7 +113,6 @@ export function AboutFrame({ frame, state, data }: { frame: Frame; state: FrameS
         <h2 id="about-title" className="sr-only">
           About
         </h2>
-        {data.portrait && <Portrait {...data.portrait} />}
         {data.bio.map((b, i) => (
           <p key={i} className={s.bio}>
             {b}

@@ -1,4 +1,4 @@
-// Regenerate the portrait assets: node scripts/dither-portrait.mjs <photo.png> public/portrait 360 1.05 1.3
+// Regenerate the portrait assets: node scripts/dither-portrait.mjs <photo.png> public/portrait 200 1.0 1.25
 // Needs Playwright's Chromium (it does the image work in a canvas); not part of the build.
 // One-off: crop the portrait, make a grayscale JPEG (for the lens) and a 1-bit Atkinson PNG (light dots on transparent).
 import { chromium } from 'playwright';

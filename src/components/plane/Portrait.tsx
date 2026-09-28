@@ -27,16 +27,12 @@ export function Portrait({ dither, ink, photo, alt }: { dither: string; ink: str
   return (
     <div ref={ref} className={s.portrait} role="img" aria-label={alt} onPointerMove={move} onPointerDown={move} onPointerLeave={leave} onPointerCancel={leave}>
       {/* eslint-disable-next-line @next/next/no-img-element -- tiny 1-bit PNG; next/image would smooth the pixels */}
-      <img className={`${s.portraitDither} ${s.portraitDark}`} src={dither} alt="" width={360} height={360} decoding="async" />
+      <img className={`${s.portraitDither} ${s.portraitDark}`} src={dither} alt="" width={200} height={200} decoding="async" />
       {/* eslint-disable-next-line @next/next/no-img-element -- light-theme version of the same dither */}
-      <img className={`${s.portraitDither} ${s.portraitLight}`} src={ink} alt="" aria-hidden="true" width={360} height={360} decoding="async" />
+      <img className={`${s.portraitDither} ${s.portraitLight}`} src={ink} alt="" aria-hidden="true" width={200} height={200} decoding="async" />
       {/* eslint-disable-next-line @next/next/no-img-element -- lens layer, same box as the dither */}
       <img className={s.portraitPhoto} src={photo} alt="" aria-hidden="true" width={800} height={800} loading="lazy" decoding="async" />
       <span className={s.portraitScan} aria-hidden="true" />
-      <div className={s.portraitCaption} aria-hidden="true">
-        <span>photo.png</span>
-        <span>1-bit · atkinson</span>
-      </div>
     </div>
   );
 }
