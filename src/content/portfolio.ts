@@ -20,20 +20,20 @@ export const portfolio: Portfolio = {
   intro:
     'I start with the business problem, then the process and the data behind it — and build what solves it: data pipelines, dashboards, automations and internal tools.',
   bio: [
-    'I’m a junior data engineer in a Data & AI team, with a background in full-stack development, workflow automation, API integration and analytics. I like understanding how a business actually runs, finding the gaps in its processes, and building practical solutions with data, software, automation and AI.',
+    'I’m a junior data engineer in the Data & AI team at TVS Philippines, with a background in full-stack development, workflow automation, API integration and analytics. I like understanding how a business actually runs, finding the gaps in its processes, and building practical solutions with data, software, automation and AI.',
     'My work started in full-stack development and grew into system integration, data engineering, business intelligence and AI. The tools change; the approach doesn’t — understand the problem, the process and the data first, then design, build, validate and improve.',
     'I’m early in my career and I learn by building real systems for real business problems. Where I’m heading is the intersection of data engineering and AI engineering: systems where data, software and intelligence work together.',
   ],
   approach: ['Problem', 'Process', 'Data', 'Design', 'Build', 'Validate', 'Improve'],
   availability: 'Open to conversations about data engineering, automation and AI',
   projects: [
-    // ------------------------------------------------------------ Data & AI
+    // ------------------------------------------------------------ Data & AI, TVS Philippines
     {
       id: 'network-dashboard',
       name: 'Network Management Dashboard',
       status: 'Implemented',
       year: '2026',
-      context: 'Data & AI · Philippines',
+      context: 'Data & AI · TVS Philippines',
       kind: 'Data Engineering / Business Intelligence',
       summary:
         'An end-to-end Databricks pipeline on the Medallion Architecture that turns dealer network source data into a business-ready Power BI dashboard for the Philippines dealer network.',
@@ -219,7 +219,7 @@ export const portfolio: Portfolio = {
       name: 'BTL Activity Analytics',
       status: 'Ongoing',
       year: '2026',
-      context: 'Data & AI · Philippines',
+      context: 'Data & AI · TVS Philippines',
       kind: 'Data Analytics / Business Intelligence',
       summary:
         'Consolidating incomplete, inconsistently structured Below-the-Line activity data to understand performance, productivity and cost efficiency across activity types, areas and regions.',
@@ -280,7 +280,7 @@ export const portfolio: Portfolio = {
       name: 'Zoho CRM Lead Accountability',
       status: 'Ongoing',
       year: '2026',
-      context: 'Data & AI · Philippines',
+      context: 'Data & AI · TVS Philippines',
       kind: 'CRM / Business process improvement',
       summary:
         'Designing a traceable lead-management process so every customer lead can be followed from inquiry to handling to final outcome — closing the visibility gap between CRM and Area Coordinators.',
@@ -720,7 +720,7 @@ export const portfolio: Portfolio = {
     { group: 'Tools', items: ['Git', 'GitHub', 'VS Code', 'Postman'] },
   ],
   timeline: [
-    { years: 'Jul 2026 — Now', role: 'Junior Data Engineer', org: 'Data & AI, Philippines' },
+    { years: 'Jul 2026 — Now', role: 'Junior Data Engineer', org: 'Data & AI, TVS Philippines' },
     {
       years: 'May 2026',
       role: 'B.S. Information Technology',
