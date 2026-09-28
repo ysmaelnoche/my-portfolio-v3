@@ -16,3 +16,4 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Colours are CSS custom properties in `src/app/globals.css`; the light theme mirrors dark (its inverse, with a few greys tuned for contrast). Don't hard-code colours in components.
 - The reading view and the no-JS fallback are the same CSS (`html[data-view='read']` / `html.no-js` in `plane.module.css`); check both when changing frame markup.
 - Run `npm run check` (lint, typecheck, tests) and `npm run build` before committing.
+- Content accuracy (the owner's rules): never invent metrics, users, savings or results; use the status taxonomy in `types.ts`; label planned features as planned; keep personal experiments out of professional claims.

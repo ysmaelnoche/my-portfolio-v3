@@ -6,29 +6,34 @@ Built with Next.js (App Router, fully static), React and TypeScript. It deploys 
 
 ## Editing the content
 
-Everything on the site comes from **`src/content/portfolio.ts`**:
+Everything on the site comes from **`src/content/portfolio.ts`** (types in `src/content/types.ts`):
 
 | Field | Where it shows |
 | --- | --- |
-| `name`, `role`, `location`, `intro` | Intro frame, page title, search/social descriptions, share image |
+| `name`, `fullName`, `role`, `location`, `intro` | Intro frame, page title, search/social descriptions, share image, structured data |
 | `handle` | The `~/handle` paths on frames and in the top bar |
-| `bio`, `timeline` | About frame |
-| `projects` | One frame each. `id` becomes the deep link (`/#halcyon`) and `open halcyon` |
-| `projects[].image` | Optional screenshot; put the file in `public/` (4:3 works best) |
-| `projects[].links` | Optional links on the card (live site, source…) |
-| `skills` | Stack frame; each item can be hovered or clicked to highlight projects that use it |
-| `email`, `availability`, `links` | Contact frame. Links starting with `https://` open in a new tab |
-| `hints` | Which examples the intro and command bar suggest (`open atlas`, `grep rust`) |
+| `bio`, `approach`, `timeline` | About frame |
+| `projects` | One frame and one case study page (`/work/<id>`) each. `id` is also the deep link (`/#<id>`) and works with `open <id>` / `cat <id>` |
+| `projects[].status` | `Implemented`, `Ongoing`, `In development`, `Planned` or `Conceptual`, plus an optional `statusNote` |
+| `projects[].visual` | The diagram on the card: a `flow` of steps (with optional `planned` steps drawn dashed) or a `quadrant` |
+| `projects[].sections` | The case study body: each has a `title` and any of `body` paragraphs, `items` bullets and a `flow` |
+| `projects[].group` + `groups` | Projects that share a group (e.g. the internship) are listed together in one frame |
+| `projects[].image`, `links` | Optional screenshot (put it in `public/`, 4:3 works best) and links on the card |
+| `skills` | Stack frame; each tool can be hovered or clicked to highlight the projects that use it |
+| `email`, `availability`, `links` | Contact frame. The email row stays hidden while `email` is empty; `#` links are hidden too |
+| `hints` | Which examples the intro and command bar suggest (`open orbit`, `grep python`) |
 
-Project names in `stack` should match the names in `skills` so `grep` can find them (tools that only appear in a project stack are still searchable).
+Tool names in a project's `stack` should match the names in `skills` so `grep` counts them.
 
-Any number of projects works: the first half go down the right side of the plane, the rest up the left. In development, the console warns if content grows long enough for frames to overlap.
+Any number of projects works: the first half of the work frames go down the right side of the plane, the rest up the left, and the stack and contact frames move down as their content grows. In development, the console warns if frames ever overlap.
+
+**Accuracy:** the content follows a few rules — no invented metrics or results, statuses from the list above, planned features labelled as planned, and personal experiments kept apart from professional experience (the `Exploring` skill group).
 
 ## Using the site
 
 - **Drag** to pan, **scroll** to pan, **⌘/Ctrl + scroll** or **pinch** to zoom
 - **← / →** tour the frames, **1–9** jump, **0** fits everything, **+ / −** zoom
-- **/** or **⌘K** opens the command bar: `tour`, `open <frame>`, `grep <tool>`, `clear`, `fit`, `read`, `invert`, `copy email`, `help`
+- **/** or **⌘K** opens the command bar: `tour`, `open <frame>`, `cat <project>` (case study), `grep <tool>`, `clear`, `fit`, `read`, `invert`, `copy email`, `help`
 - **r** switches to the reading view (a plain scrolling page), **i** toggles light/dark, **?** lists everything
 
 ## Development
@@ -54,7 +59,9 @@ The layout, type, colours, motion and commands follow the Claude Design file. On
 - **Reading view.** A single-column version of the same content (`read`, **r**, or the top-bar button). Better on phones, and it's also what visitors without JavaScript see.
 - **Mobile and touch.** Pinch to zoom, two-finger pan, a tidier top bar, and a command bar that respects the iPhone home indicator. The concept switcher from the design file is gone.
 - **Accessibility.** Real buttons and links, keyboard focus that flies the camera to the focused frame, a proper command-bar combobox, screen-reader announcements, a skip link, reduced-motion support (no boot sequence or flights), and higher contrast for small grey text.
-- **Content.** Project cards show the role, status and the two headline facts from the data, and support optional screenshots and links. The Stack frame's items can be clicked to pin a highlight, and `grep` also finds tools that only appear in project stacks.
+- **Case studies.** Every project has its own static page (`/work/<id>`) with problem, solution, outcome and next steps, so each one can be shared and indexed. Cards show a diagram drawn from the project's own flow, its status and two headline facts.
+- **Groups.** Smaller related projects (the internship) share one frame instead of crowding the plane.
+- **Stack.** Tools can be clicked to pin a highlight, and `grep` also finds tools that only appear in project stacks.
 - **Deep links.** The URL follows the active frame (`/#parallax`), so any frame can be shared.
 - **Theme.** Light mode uses colour tokens instead of a CSS invert filter, so images keep their colours; the choice is remembered.
 - **Performance.** The camera only renders while something moves (the design ran an animation loop every frame), fonts are self-hosted, and the page is prerendered as static HTML.
