@@ -1,7 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type { CSSProperties, ReactNode } from 'react';
-import { isExternal, statusLabel } from '@/content/format';
+import { isExternal, statusLabel, telHref } from '@/content/format';
 import type { Portfolio, Project, ProjectGroup } from '@/content/types';
 import { Visual } from '@/components/visuals/Visual';
 import { coordLabel, stackColumns, type Frame } from './layout';
@@ -398,8 +398,16 @@ export function ContactFrame({
             </button>
           </div>
         )}
+        {data.phone && (
+          <div className={s.emailRow}>
+            <a className={s.email} href={telHref(data.phone)}>
+              {data.phone}
+            </a>
+            <span className={s.contactRowTag}>mobile</span>
+          </div>
+        )}
         {links.length > 0 && (
-          <ul className={s.contactLinks} data-bordered={!data.email || undefined}>
+          <ul className={s.contactLinks} data-bordered={(!data.email && !data.phone) || undefined}>
             {links.map((k) => (
               <li key={k.label}>
                 <a href={k.href} {...(isExternal(k.href) ? { target: '_blank', rel: 'noreferrer' } : {})}>

@@ -106,6 +106,8 @@ export type Portfolio = {
   location: string;
   /** Leave empty to hide the email row until you're ready to publish one. */
   email?: string;
+  /** Optional phone in international format, e.g. '+63 969 049 3331'. Shown as a tap-to-call link. */
+  phone?: string;
   /** Hero sentence on the intro frame; also the default SEO description. */
   intro: string;
   bio: string[];

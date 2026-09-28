@@ -17,6 +17,7 @@ export const portfolio: Portfolio = {
   school: 'Lyceum of Alabang',
   location: 'Philippines · GMT+8',
   email: 'ysmaelnoche02@gmail.com',
+  phone: '+63 969 049 3331',
   intro:
     'I start with the business problem, then the process and the data behind it — and build what solves it: data pipelines, dashboards, automations and internal tools.',
   bio: [

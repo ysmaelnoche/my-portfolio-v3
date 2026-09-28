@@ -549,6 +549,17 @@
   border-bottom: 1px solid var(--text-bio);
 }
 
+.emailRow + .emailRow {
+  border-top: 0;
+}
+
+.contactRowTag {
+  flex: none;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
 .email {
   min-width: 0;
   overflow-wrap: anywhere;

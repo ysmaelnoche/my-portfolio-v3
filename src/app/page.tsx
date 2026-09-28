@@ -12,6 +12,7 @@ function personJsonLd() {
     jobTitle: portfolio.role,
     description: portfolio.intro,
     ...(portfolio.email ? { email: `mailto:${portfolio.email}` } : {}),
+    ...(portfolio.phone ? { telephone: portfolio.phone } : {}),
     url: siteUrl(),
     ...(portfolio.school ? { alumniOf: { '@type': 'CollegeOrUniversity', name: portfolio.school } } : {}),
     knowsAbout: portfolio.skills.flatMap((g) => g.items),

@@ -20,7 +20,7 @@ Everything on the site comes from **`src/content/portfolio.ts`** (types in `src/
 | `projects[].group` + `groups` | Projects that share a group (e.g. the internship) are listed together in one frame |
 | `projects[].image`, `links` | Optional screenshot (put it in `public/`, 4:3 works best) and links on the card |
 | `skills` | Stack frame; each tool can be hovered or clicked to highlight the projects that use it |
-| `email`, `availability`, `links` | Contact frame. The email row stays hidden while `email` is empty; `#` links are hidden too |
+| `email`, `phone`, `availability`, `links` | Contact frame. The email row stays hidden while `email` is empty, the phone row while `phone` is; `#` links are hidden too |
 | `hints` | Which examples the intro and command bar suggest (`open orbit`, `grep python`) |
 
 Tool names in a project's `stack` should match the names in `skills` so `grep` counts them.
