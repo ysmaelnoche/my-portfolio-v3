@@ -35,6 +35,7 @@ Any number of projects works: the first half of the work frames go down the righ
 - **← / →** tour the frames, **1–9** jump, **0** fits everything, **+ / −** zoom
 - **/** or **⌘K** opens the command bar: `tour`, `open <frame>`, `cat <project>` (case study), `grep <tool>`, `clear`, `fit`, `read`, `invert`, `copy email`, `help`
 - **r** switches to the reading view (a plain scrolling page), **i** toggles light/dark, **?** lists everything
+- Single-key shortcuts can be turned off in the help dialog (**?**)
 
 ## Development
 
@@ -57,8 +58,8 @@ npm run build      # production build
 The layout, type, colours, motion and commands follow the Claude Design file. On top of that:
 
 - **Reading view.** A single-column version of the same content (`read`, **r**, or the top-bar button). Better on phones, and it's also what visitors without JavaScript see.
-- **Mobile and touch.** Pinch to zoom, two-finger pan, a tidier top bar, and a command bar that respects the iPhone home indicator. The concept switcher from the design file is gone.
-- **Accessibility.** Real buttons and links, keyboard focus that flies the camera to the focused frame, a proper command-bar combobox, screen-reader announcements, a skip link, reduced-motion support (no boot sequence or flights), and higher contrast for small grey text.
+- **Mobile and touch.** Pinch to zoom, two-finger pan, drags that start on a link still pan, a compact layout for phones in portrait and landscape, readable zoom for wide frames, and a one-time suggestion to use the reading view. The concept switcher from the design file is gone.
+- **Accessibility.** Real buttons and links; navigating moves keyboard focus to the frame; the header and frame list come first in tab order; a proper command-bar combobox; screen-reader announcements; a skip link; single-key shortcuts that can be switched off; reduced-motion support (no boot sequence or flights); AA contrast in both themes. Checked with axe in every view and theme.
 - **Case studies.** Every project has its own static page (`/work/<id>`) with problem, solution, outcome and next steps, so each one can be shared and indexed. Cards show a diagram drawn from the project's own flow, its status and two headline facts.
 - **Groups.** Smaller related projects (the internship) share one frame instead of crowding the plane.
 - **Stack.** Tools can be clicked to pin a highlight, and `grep` also finds tools that only appear in project stacks.
